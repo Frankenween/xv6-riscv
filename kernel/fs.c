@@ -10,8 +10,6 @@
 // are in sysfile.c.
 
 #include "types.h"
-#include "riscv.h"
-#include "defs.h"
 #include "param.h"
 #include "stat.h"
 #include "spinlock.h"
@@ -20,6 +18,9 @@
 #include "fs.h"
 #include "buf.h"
 #include "file.h"
+#include "log.h"
+#include "string.h"
+#include "printf.h"
 
 #define min(a, b) ((a) < (b) ? (a) : (b))
 // there should be one superblock per disk device, but we run with
@@ -214,7 +215,7 @@ ialloc(uint dev, short type)
     }
     brelse(bp);
   }
-  printf("ialloc: no inodes\n");
+  printf("ialloc_: no inodes\n");
   return 0;
 }
 

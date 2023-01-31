@@ -1,6 +1,7 @@
 #pragma once
 
 #include "sleeplock.h"
+#include "fs.h"
 #include "types.h"
 
 struct buf {
@@ -14,4 +15,11 @@ struct buf {
   struct buf *next;
   uchar data[BSIZE];
 };
+
+void            binit(void);
+struct buf*     bread(uint, uint);
+void            brelse(struct buf*);
+void            bwrite(struct buf*);
+void            bpin(struct buf*);
+void            bunpin(struct buf*);
 

@@ -6,15 +6,20 @@
 
 #include "types.h"
 #include "riscv.h"
-#include "defs.h"
 #include "param.h"
 #include "stat.h"
-#include "spinlock.h"
 #include "proc.h"
 #include "fs.h"
-#include "sleeplock.h"
 #include "file.h"
 #include "fcntl.h"
+#include "pipe.h"
+#include "vm.h"
+#include "syscall.h"
+#include "exec.h"
+#include "kalloc.h"
+#include "log.h"
+#include "printf.h"
+#include "string.h"
 
 // Fetch the nth word-sized system call argument as a file descriptor
 // and return both the descriptor and the corresponding struct file.

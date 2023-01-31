@@ -3,12 +3,11 @@
 //
 
 #include "types.h"
-#include "param.h"
 #include "memlayout.h"
-#include "riscv.h"
 #include "spinlock.h"
+#include "console.h"
+#include "uart.h"
 #include "proc.h"
-#include "defs.h"
 
 // the UART control registers are memory-mapped
 // at address UART0. this macro returns the

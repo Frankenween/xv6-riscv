@@ -1,11 +1,10 @@
 #include "types.h"
-#include "param.h"
-#include "memlayout.h"
-#include "riscv.h"
-#include "spinlock.h"
 #include "proc.h"
 #include "syscall.h"
-#include "defs.h"
+#include "syscall_numbers.h"
+#include "vm.h"
+#include "printf.h"
+#include "string.h"
 
 // Fetch the uint64 at addr from the current process.
 int

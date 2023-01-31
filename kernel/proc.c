@@ -4,7 +4,13 @@
 #include "riscv.h"
 #include "spinlock.h"
 #include "proc.h"
-#include "defs.h"
+#include "vm.h"
+#include "trap.h"
+#include "kalloc.h"
+#include "fs.h"
+#include "log.h"
+#include "printf.h"
+#include "string.h"
 
 struct cpu cpus[NCPU];
 

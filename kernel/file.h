@@ -1,5 +1,10 @@
 #pragma once
 
+#include "sleeplock.h"
+
+// Remember to change this constant in fs.h too
+#define NDIRECT 12
+
 struct file {
   enum { FD_NONE, FD_PIPE, FD_INODE, FD_DEVICE } type;
   int ref; // reference count
@@ -40,3 +45,11 @@ struct devsw {
 extern struct devsw devsw[];
 
 #define CONSOLE 1
+
+struct file*    filealloc(void);
+void            fileclose(struct file*);
+struct file*    filedup(struct file*);
+void            fileinit(void);
+int             fileread(struct file*, uint64, int n);
+int             filestat(struct file*, uint64 addr);
+int             filewrite(struct file*, uint64, int n);

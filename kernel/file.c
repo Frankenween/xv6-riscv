@@ -3,15 +3,16 @@
 //
 
 #include "types.h"
-#include "riscv.h"
-#include "defs.h"
 #include "param.h"
 #include "fs.h"
 #include "spinlock.h"
-#include "sleeplock.h"
 #include "file.h"
 #include "stat.h"
 #include "proc.h"
+#include "vm.h"
+#include "pipe.h"
+#include "log.h"
+#include "printf.h"
 
 struct devsw devsw[NDEV];
 struct {

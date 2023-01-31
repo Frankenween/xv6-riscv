@@ -7,14 +7,15 @@
 
 #include "types.h"
 #include "riscv.h"
-#include "defs.h"
-#include "param.h"
 #include "memlayout.h"
 #include "spinlock.h"
-#include "sleeplock.h"
 #include "fs.h"
 #include "buf.h"
 #include "virtio.h"
+#include "proc.h"
+#include "kalloc.h"
+#include "printf.h"
+#include "string.h"
 
 // the address of virtio mmio register r.
 #define R(r) ((volatile uint32 *)(VIRTIO0 + (r)))
