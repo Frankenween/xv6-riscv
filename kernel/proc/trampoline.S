@@ -10,8 +10,8 @@
         # a page boundary.
         #
 
-#include "riscv.h"
-#include "memlayout.h"
+#include "../mem/memlayout.h"
+#include "../riscv.h"
 
 .section trampsec
 .globl trampoline

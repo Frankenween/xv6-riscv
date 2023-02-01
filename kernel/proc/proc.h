@@ -1,10 +1,10 @@
 #pragma once
 
-#include "file.h"
-#include "param.h"
-#include "riscv.h"
-#include "spinlock.h"
-#include "types.h"
+#include "kernel/fs/file.h"
+#include "kernel/param.h"
+#include "kernel/riscv.h"
+#include "kernel/types.h"
+#include "kernel/util/spinlock.h"
 
 // Saved registers for kernel context switches.
 struct context {

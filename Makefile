@@ -6,29 +6,29 @@ OBJS = \
   $K/start.o \
   $K/console.o \
   $K/printf.o \
-  $K/uart.o \
-  $K/kalloc.o \
-  $K/spinlock.o \
-  $K/string.o \
+  $K/dev/uart.o \
+  $K/mem/kalloc.o \
+  $K/util/spinlock.o \
+  $K/util/string.o \
   $K/main.o \
-  $K/vm.o \
-  $K/proc.o \
-  $K/swtch.o \
-  $K/trampoline.o \
-  $K/trap.o \
+  $K/mem/vm.o \
+  $K/proc/proc.o \
+  $K/proc/swtch.o \
+  $K/proc/trampoline.o \
+  $K/proc/trap.o \
   $K/syscall.o \
   $K/sysproc.o \
-  $K/bio.o \
-  $K/fs.o \
-  $K/log.o \
-  $K/sleeplock.o \
-  $K/file.o \
+  $K/fs/bio.o \
+  $K/fs/fs.o \
+  $K/fs/log.o \
+  $K/util/sleeplock.o \
+  $K/fs/file.o \
   $K/pipe.o \
-  $K/exec.o \
-  $K/sysfile.o \
+  $K/proc/exec.o \
+  $K/fs/sysfile.o \
   $K/kernelvec.o \
-  $K/plic.o \
-  $K/virtio_disk.o
+  $K/dev/plic.o \
+  $K/dev/virtio_disk.o
 
 # riscv64-unknown-elf- or riscv64-linux-gnu-
 # perhaps in /opt/riscv/bin
@@ -106,7 +106,7 @@ $U/_forktest: $U/forktest.o $(ULIB)
 	$(LD) $(LDFLAGS) -N -e main -Ttext 0 -o $U/_forktest $U/forktest.o $U/ulib.o $U/usys.o
 	$(OBJDUMP) -S $U/_forktest > $U/forktest.asm
 
-mkfs/mkfs: mkfs/mkfs.c $K/fs.h $K/param.h
+mkfs/mkfs: mkfs/mkfs.c $K/fs/fs.h $K/param.h
 	gcc -Werror -Wall -I. -o mkfs/mkfs mkfs/mkfs.c
 
 # Prevent deletion of intermediate files, e.g. cat.o, after first build, so
@@ -138,9 +138,9 @@ fs.img: mkfs/mkfs README $(UPROGS)
 
 -include kernel/*.d user/*.d
 
-clean: 
+clean:
+	find . -regextype posix-egrep -regex ".*\.(o|d|asm|sym)" -type f -delete
 	rm -f *.tex *.dvi *.idx *.aux *.log *.ind *.ilg \
-	*/*.o */*.d */*.asm */*.sym \
 	$U/initcode $U/initcode.out $K/kernel fs.img \
 	mkfs/mkfs .gdbinit \
         $U/usys.S \

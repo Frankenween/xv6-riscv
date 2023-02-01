@@ -6,16 +6,16 @@
 // virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
 //
 
-#include "buf.h"
-#include "fs.h"
-#include "kalloc.h"
-#include "memlayout.h"
-#include "printf.h"
-#include "proc.h"
-#include "riscv.h"
-#include "spinlock.h"
-#include "string.h"
-#include "types.h"
+#include "kernel/fs/bio.h"
+#include "kernel/fs/fs.h"
+#include "kernel/mem/kalloc.h"
+#include "kernel/mem/memlayout.h"
+#include "kernel/printf.h"
+#include "kernel/proc/proc.h"
+#include "kernel/riscv.h"
+#include "kernel/types.h"
+#include "kernel/util/spinlock.h"
+#include "kernel/util/string.h"
 #include "virtio.h"
 
 // the address of virtio mmio register r.
@@ -48,7 +48,7 @@ static struct disk {
   // for use when completion interrupt arrives.
   // indexed by first descriptor index of chain.
   struct {
-    struct buf *b;
+    struct bio *b;
     char status;
   } info[NUM];
 
@@ -195,7 +195,7 @@ static int alloc3_desc(int *idx) {
   return 0;
 }
 
-void virtio_disk_rw(struct buf *b, int write) {
+void virtio_disk_rw(struct bio *b, int write) {
   uint64 sector = b->blockno * (BSIZE / 512);
 
   acquire(&disk.vdisk_lock);
@@ -294,7 +294,7 @@ void virtio_disk_intr() {
 
     if (disk.info[id].status != 0) panic("virtio_disk_intr status");
 
-    struct buf *b = disk.info[id].b;
+    struct bio *b = disk.info[id].b;
     b->disk = 0;  // disk is done with buf
     wakeup(b);
 

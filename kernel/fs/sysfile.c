@@ -4,22 +4,19 @@
 // user code, and calls into file.c and fs.c.
 //
 
-#include "exec.h"
-#include "fcntl.h"
-#include "file.h"
-#include "fs.h"
-#include "kalloc.h"
-#include "log.h"
-#include "param.h"
-#include "pipe.h"
-#include "printf.h"
-#include "proc.h"
-#include "riscv.h"
-#include "stat.h"
-#include "string.h"
-#include "syscall.h"
-#include "types.h"
-#include "vm.h"
+#include "kernel/fs/fcntl.h"
+#include "kernel/fs/file.h"
+#include "kernel/fs/fs.h"
+#include "kernel/fs/log.h"
+#include "kernel/mem/kalloc.h"
+#include "kernel/mem/vm.h"
+#include "kernel/param.h"
+#include "kernel/pipe.h"
+#include "kernel/printf.h"
+#include "kernel/proc/exec.h"
+#include "kernel/proc/proc.h"
+#include "kernel/syscall.h"
+#include "kernel/util/string.h"
 
 // Fetch the nth word-sized system call argument as a file descriptor
 // and return both the descriptor and the corresponding struct file.

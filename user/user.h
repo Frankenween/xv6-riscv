@@ -1,4 +1,5 @@
-struct stat;
+#include "kernel/fs/stat.h"
+#include "kernel/types.h"
 
 // system calls
 int fork(void);

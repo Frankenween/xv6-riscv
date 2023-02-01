@@ -1,10 +1,9 @@
 #include "pipe.h"
 
-#include "file.h"
-#include "kalloc.h"
-#include "proc.h"
+#include "kernel/mem/kalloc.h"
+#include "kernel/mem/vm.h"
+#include "kernel/proc/proc.h"
 #include "types.h"
-#include "vm.h"
 
 int pipealloc(struct file **f0, struct file **f1) {
   struct pipe *pi;

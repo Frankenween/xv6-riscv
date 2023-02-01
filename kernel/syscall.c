@@ -1,11 +1,11 @@
 #include "syscall.h"
 
+#include "kernel/mem/vm.h"
+#include "kernel/proc/proc.h"
+#include "kernel/util/string.h"
 #include "printf.h"
-#include "proc.h"
-#include "string.h"
 #include "syscall_numbers.h"
 #include "types.h"
-#include "vm.h"
 
 // Fetch the uint64 at addr from the current process.
 int fetchaddr(uint64 addr, uint64 *ip) {

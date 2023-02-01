@@ -1,5 +1,4 @@
-#include "kernel/stat.h"
-#include "kernel/types.h"
+#include "kernel/fs/stat.h"
 #include "user/user.h"
 
 int main(int argc, char *argv[]) {

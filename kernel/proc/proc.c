@@ -1,17 +1,17 @@
 #include "proc.h"
 
-#include "fs.h"
-#include "kalloc.h"
-#include "log.h"
-#include "memlayout.h"
-#include "param.h"
-#include "printf.h"
-#include "riscv.h"
-#include "spinlock.h"
-#include "string.h"
+#include "kernel/fs/fs.h"
+#include "kernel/fs/log.h"
+#include "kernel/mem/kalloc.h"
+#include "kernel/mem/memlayout.h"
+#include "kernel/mem/vm.h"
+#include "kernel/param.h"
+#include "kernel/printf.h"
+#include "kernel/riscv.h"
+#include "kernel/types.h"
+#include "kernel/util/spinlock.h"
+#include "kernel/util/string.h"
 #include "trap.h"
-#include "types.h"
-#include "vm.h"
 
 struct cpu cpus[NCPU];
 

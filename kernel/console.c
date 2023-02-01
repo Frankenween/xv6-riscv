@@ -11,13 +11,10 @@
 
 #include "console.h"
 
-#include <stdarg.h>
-
-#include "file.h"
-#include "proc.h"
-#include "spinlock.h"
+#include "kernel/dev/uart.h"
+#include "kernel/fs/file.h"
+#include "kernel/proc/proc.h"
 #include "types.h"
-#include "uart.h"
 
 #define BACKSPACE 0x100
 #define C(x) ((x) - '@')  // Control-x

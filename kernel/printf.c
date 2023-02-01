@@ -7,7 +7,7 @@
 #include <stdarg.h>
 
 #include "console.h"
-#include "spinlock.h"
+#include "kernel/util/spinlock.h"
 #include "types.h"
 
 volatile int panicked = 0;

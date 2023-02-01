@@ -1,6 +1,6 @@
 #pragma once
 
-#include "sleeplock.h"
+#include "kernel/util/sleeplock.h"
 
 // Remember to change this constant in fs.h too
 #define NDIRECT 12

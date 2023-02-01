@@ -2,7 +2,7 @@
 
 #include "sleeplock.h"
 
-#include "proc.h"
+#include "kernel/proc/proc.h"
 #include "spinlock.h"
 
 void initsleeplock(struct sleeplock *lk, char *name) {

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "file.h"
-#include "spinlock.h"
+#include "kernel/fs/file.h"
+#include "kernel/util/spinlock.h"
 #include "types.h"
 
 #define PIPESIZE 512

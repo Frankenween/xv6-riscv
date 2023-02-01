@@ -1,8 +1,8 @@
 #include "plic.h"
 
-#include "memlayout.h"
-#include "proc.h"
-#include "types.h"
+#include "kernel/mem/memlayout.h"
+#include "kernel/proc/proc.h"
+#include "kernel/types.h"
 
 //
 // the riscv Platform Level Interrupt Controller (PLIC).

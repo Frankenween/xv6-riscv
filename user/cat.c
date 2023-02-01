@@ -1,5 +1,3 @@
-#include "kernel/stat.h"
-#include "kernel/types.h"
 #include "user/user.h"
 
 char buf[512];

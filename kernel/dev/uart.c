@@ -4,11 +4,11 @@
 
 #include "uart.h"
 
-#include "console.h"
-#include "memlayout.h"
-#include "proc.h"
-#include "spinlock.h"
-#include "types.h"
+#include "kernel/console.h"
+#include "kernel/mem/memlayout.h"
+#include "kernel/proc/proc.h"
+#include "kernel/types.h"
+#include "kernel/util/spinlock.h"
 
 // the UART control registers are memory-mapped
 // at address UART0. this macro returns the

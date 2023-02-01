@@ -1,7 +1,7 @@
 // Buffer cache.
 //
 // The buffer cache is a linked list of buf structures holding
-// cached copies of disk block contents.  Caching disk blocks
+// cached copies of disk block contents. Caching disk blocks
 // in memory reduces the number of disk reads and also provides
 // a synchronization point for disk blocks used by multiple processes.
 //
@@ -13,25 +13,24 @@
 // * Only one process at a time can use a buffer,
 //     so do not keep them longer than necessary.
 
-#include "buf.h"
-#include "param.h"
-#include "printf.h"
-#include "spinlock.h"
-#include "types.h"
-#include "virtio.h"
+#include "bio.h"
+
+#include "kernel/dev/virtio.h"
+#include "kernel/param.h"
+#include "kernel/printf.h"
 
 struct {
   struct spinlock lock;
-  struct buf buf[NBUF];
+  struct bio buf[NBUF];
 
   // Linked list of all buffers, through prev/next.
   // Sorted by how recently the buffer was used.
   // head.next is most recent, head.prev is least.
-  struct buf head;
+  struct bio head;
 } bcache;
 
 void binit(void) {
-  struct buf *b;
+  struct bio *b;
 
   initlock(&bcache.lock, "bcache");
 
@@ -50,8 +49,8 @@ void binit(void) {
 // Look through buffer cache for block on device dev.
 // If not found, allocate a buffer.
 // In either case, return locked buffer.
-static struct buf *bget(uint dev, uint blockno) {
-  struct buf *b;
+static struct bio *bget(uint dev, uint blockno) {
+  struct bio *b;
 
   acquire(&bcache.lock);
 
@@ -82,8 +81,8 @@ static struct buf *bget(uint dev, uint blockno) {
 }
 
 // Return a locked buf with the contents of the indicated block.
-struct buf *bread(uint dev, uint blockno) {
-  struct buf *b;
+struct bio *bread(uint dev, uint blockno) {
+  struct bio *b;
 
   b = bget(dev, blockno);
   if (!b->valid) {
@@ -94,14 +93,14 @@ struct buf *bread(uint dev, uint blockno) {
 }
 
 // Write b's contents to disk.  Must be locked.
-void bwrite(struct buf *b) {
+void bwrite(struct bio *b) {
   if (!holdingsleep(&b->lock)) panic("bwrite");
   virtio_disk_rw(b, 1);
 }
 
 // Release a locked buffer.
 // Move to the head of the most-recently-used list.
-void brelse(struct buf *b) {
+void brelse(struct bio *b) {
   if (!holdingsleep(&b->lock)) panic("brelse");
 
   releasesleep(&b->lock);
@@ -121,13 +120,13 @@ void brelse(struct buf *b) {
   release(&bcache.lock);
 }
 
-void bpin(struct buf *b) {
+void bpin(struct bio *b) {
   acquire(&bcache.lock);
   b->refcnt++;
   release(&bcache.lock);
 }
 
-void bunpin(struct buf *b) {
+void bunpin(struct bio *b) {
   acquire(&bcache.lock);
   b->refcnt--;
   release(&bcache.lock);

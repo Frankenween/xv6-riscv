@@ -1,6 +1,6 @@
 #pragma once
 
-#include "types.h"
+#include "kernel/types.h"
 
 extern uint ticks;
 void trapinit(void);

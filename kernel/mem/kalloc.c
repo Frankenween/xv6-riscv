@@ -4,12 +4,11 @@
 
 #include "kalloc.h"
 
+#include "kernel/printf.h"
+#include "kernel/riscv.h"
+#include "kernel/util/spinlock.h"
+#include "kernel/util/string.h"
 #include "memlayout.h"
-#include "printf.h"
-#include "riscv.h"
-#include "spinlock.h"
-#include "string.h"
-#include "types.h"
 
 void freerange(void *pa_start, void *pa_end);
 

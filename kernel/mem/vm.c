@@ -1,12 +1,10 @@
 #include "vm.h"
 
-#include "kalloc.h"
-#include "memlayout.h"
-#include "printf.h"
-#include "proc.h"
-#include "riscv.h"
-#include "string.h"
-#include "types.h"
+#include "kernel/mem/kalloc.h"
+#include "kernel/mem/memlayout.h"
+#include "kernel/printf.h"
+#include "kernel/proc/proc.h"
+#include "kernel/util/string.h"
 
 /*
  * the kernel's page table.
