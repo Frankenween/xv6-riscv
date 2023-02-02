@@ -7,7 +7,6 @@
 #include "buddy_alloc.h"
 #include "kernel/mem/memlayout.h"
 #include "kernel/riscv.h"
-#include "pool_alloc.h"
 
 extern char end[];  // first address after kernel
 
@@ -26,3 +25,5 @@ void kfree(void *pa) { free_buddy(pa); }
 // Returns a pointer that the kernel can use.
 // Returns 0 if the memory cannot be allocated.
 void *kalloc(void) { return malloc_buddy(PGSIZE); }
+
+void *malloc(uint64 n) { return malloc_buddy(n); }
