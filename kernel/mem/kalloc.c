@@ -4,17 +4,25 @@
 
 #include "kalloc.h"
 
+#include "buddy_alloc.h"
+#include "kernel/mem/memlayout.h"
+#include "kernel/riscv.h"
 #include "pool_alloc.h"
 
-void kinit() { init_pool_allocator(); }
+extern char end[];  // first address after kernel
+
+void kinit() {
+  char *base = (char *)PGROUNDUP((uint64)end);
+  init_buddy(base, (void *)PHYSTOP);
+}
 
 // Free the page of physical memory pointed at by pa,
 // which normally should have been returned by a
 // call to kalloc().  (The exception is when
 // initializing the allocator; see kinit above.)
-void kfree(void *pa) { free_pool_allocator(pa); }
+void kfree(void *pa) { free_buddy(pa); }
 
 // Allocate one 4096-byte page of physical memory.
 // Returns a pointer that the kernel can use.
 // Returns 0 if the memory cannot be allocated.
-void *kalloc(void) { return kalloc_pool_allocator(); }
+void *kalloc(void) { return malloc_buddy(PGSIZE); }
