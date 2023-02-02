@@ -28,7 +28,11 @@ OBJS = \
   $K/fs/sysfile.o \
   $K/kernelvec.o \
   $K/dev/plic.o \
-  $K/dev/virtio_disk.o
+  $K/dev/virtio_disk.o \
+  $K/mem/pool_alloc.o \
+  $K/mem/buddy_alloc.o \
+  $K/util/bitset.o \
+  $K/util/free_mem_list.o
 
 # riscv64-unknown-elf- or riscv64-linux-gnu-
 # perhaps in /opt/riscv/bin
