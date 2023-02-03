@@ -27,3 +27,7 @@ void kfree(void *pa) { free_buddy(pa); }
 void *kalloc(void) { return malloc_buddy(PGSIZE); }
 
 void *malloc(uint64 n) { return malloc_buddy(n); }
+
+uint64 sys_havemem() {
+  return havemem_buddy();
+}

@@ -30,6 +30,7 @@ struct level_info {
 static struct level_info *lvl_sizes;
 static void *allocator_base;
 static struct spinlock lock;
+static uint64 free_mem;
 
 int first_level_contains(uint64 n) {
   int lvl = 0;
@@ -65,6 +66,7 @@ void *malloc_buddy(uint64 n) {
     release(&lock);
     return 0;
   }
+  __sync_sub_and_fetch(&free_mem, BLK_SIZE(fk));
   char *p = fm_list_pop(&lvl_sizes[k].free);
   bit_invert(lvl_sizes[k].allocated, ptr_block_index(k, p) >> 1);
   for (; k > fk; k--) {
@@ -92,6 +94,8 @@ void free_buddy(void *p) {
   int k = ptr_block_size(p);
 
   acquire(&lock);
+  __sync_add_and_fetch(&free_mem, BLK_SIZE(k));
+  free_mem += BLK_SIZE(k);
   for (; k < MAXSIZE; k++) {
     uint64 block_index = ptr_block_index(k, p);
     uint64 buddy = ((block_index & 1) == 0) ? block_index + 1 : block_index - 1;
@@ -111,6 +115,10 @@ void free_buddy(void *p) {
   fm_list_push(&lvl_sizes[k].free, p);
 
   release(&lock);
+}
+
+uint64 havemem_buddy() {
+  return __sync_add_and_fetch(&free_mem, 0);
 }
 
 // First block with size k that doesn't contain p
@@ -258,6 +266,7 @@ void init_buddy(void *base, void *end) {
 
   // initialize free lists for each size k
   uint64 free = bd_initfree(p, bd_end);
+  free_mem = free;
 
   // check if the amount that is free is what we expect
   if (free != BLK_SIZE(MAXSIZE) - meta - unavailable) {

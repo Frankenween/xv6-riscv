@@ -5,11 +5,7 @@
 #include "kernel/mem/kalloc.h"
 #include "kernel/mem/memlayout.h"
 #include "kernel/mem/vm.h"
-#include "kernel/param.h"
 #include "kernel/printf.h"
-#include "kernel/riscv.h"
-#include "kernel/types.h"
-#include "kernel/util/spinlock.h"
 #include "kernel/util/string.h"
 #include "trap.h"
 
