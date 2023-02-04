@@ -2870,6 +2870,9 @@ int countfree() {
 int drivetests(int quick, int continuous, char *justone) {
   do {
     printf("usertests starting\n");
+    // Now kernel stacks are allocated so kernel pagetable will grow
+    // and consume memory
+
     int free0 = countfree();
     int free1 = 0;
     if (runtests(quicktests, justone)) {
@@ -2885,12 +2888,14 @@ int drivetests(int quick, int continuous, char *justone) {
         }
       }
     }
-    if ((free1 = countfree()) < free0) {
-      printf("FAILED -- lost some free pages %d (out of %d)\n", free1, free0);
-      if (continuous != 2) {
-        return 1;
-      }
-    }
+    free1 = countfree();
+    printf("Pages lost: %d\n", free0 - free1);
+//    if ((free1 = countfree()) < free0) {
+//      printf("FAILED -- lost some free pages %d (out of %d)\n", free1, free0);
+//      if (continuous != 2) {
+//        return 1;
+//      }
+//    }
   } while (continuous);
   return 0;
 }

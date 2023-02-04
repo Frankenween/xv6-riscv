@@ -29,18 +29,13 @@ extern char trampoline[];  // trampoline.S
 // must be acquired before any p->lock.
 struct spinlock wait_lock;
 
+pagetable_t k_pagetable;
+
 // Allocate a page for each process's kernel stack.
 // Map it high in memory, followed by an invalid
 // guard page.
 void proc_mapstacks(pagetable_t kpgtbl) {
-  struct proc *p;
-
-  for (p = proc; p < &proc[NPROC]; p++) {
-    char *pa = kalloc();
-    if (pa == 0) panic("kalloc");
-    uint64 va = KSTACK((int)(p - proc));
-    kvmmap(kpgtbl, va, (uint64)pa, PGSIZE, PTE_R | PTE_W);
-  }
+  k_pagetable = kpgtbl;
 }
 
 // initialize the proc table.
@@ -52,7 +47,6 @@ void procinit(void) {
   for (p = proc; p < &proc[NPROC]; p++) {
     initlock(&p->lock, "proc");
     p->state = UNUSED;
-    p->kstack = KSTACK((int)(p - proc));
   }
 }
 
@@ -113,6 +107,21 @@ found:
   p->pid = allocpid();
   p->state = USED;
 
+  void *kstack_page = kalloc();
+  if (kstack_page == 0) {
+    freeproc(p);
+    release(&p->lock);
+    return 0;
+  }
+  if (mappages(k_pagetable, KSTACK(p->pid), PGSIZE, (uint64)kstack_page, PTE_R | PTE_W) != 0) {
+    kfree(kstack_page);
+    freeproc(p);
+    release(&p->lock);
+    return 0;
+  }
+  p->kstack = KSTACK(p->pid);
+
+
   // Allocate a trapframe page.
   if ((p->trapframe = (struct trapframe *)kalloc()) == 0) {
     freeproc(p);
@@ -144,6 +153,7 @@ static void freeproc(struct proc *p) {
   if (p->trapframe) kfree((void *)p->trapframe);
   p->trapframe = 0;
   if (p->pagetable) proc_freepagetable(p->pagetable, p->sz);
+  if (p->kstack) uvmunmap(k_pagetable, p->kstack, 1, 1);
   p->pagetable = 0;
   p->sz = 0;
   p->pid = 0;
@@ -153,6 +163,7 @@ static void freeproc(struct proc *p) {
   p->killed = 0;
   p->xstate = 0;
   p->state = UNUSED;
+  p->kstack = 0;
 }
 
 // Create a user page table for a given process, with no user memory,
