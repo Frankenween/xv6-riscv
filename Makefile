@@ -60,7 +60,7 @@ QEMU = qemu-system-riscv64
 
 CC = $(TOOLPREFIX)gcc
 CPP = $(TOOLPREFIX)g++
-AS = $(TOOLPREFIX)gas
+AS = $(TOOLPREFIX)as
 LD = $(TOOLPREFIX)ld
 OBJCOPY = $(TOOLPREFIX)objcopy
 OBJDUMP = $(TOOLPREFIX)objdump
