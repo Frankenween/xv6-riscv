@@ -77,6 +77,17 @@ void push_pool(struct proc *p) {
   release(&free_proc_pool.pool_lock);
 }
 
+void print_pool() {
+  printf("free pool\n");
+  for (int i = 0; i < NCPU * 2; i++) {
+    if (free_proc_pool.freed[i] != 0) {
+      printf("pid %d name %s\n",
+             free_proc_pool.freed[i]->pid,
+             free_proc_pool.freed[i]->name);
+    }
+  }
+}
+
 // Allocate a page for each process's kernel stack.
 // Map it high in memory, followed by an invalid
 // guard page.
@@ -634,7 +645,6 @@ void wakeup(void *chan) {
       release(&p->lock);
     }
     __sync_fetch_and_sub(&p->watching, 1);
-
   }
 }
 
@@ -669,7 +679,7 @@ int kill(int pid) {
       return 0;
     }
     release(&p->lock);
-    __sync_fetch_and_add(&p->watching, 1);
+    __sync_fetch_and_sub(&p->watching, 1);
   }
   return -1;
 }
@@ -728,6 +738,7 @@ void procdump(void) {
   printf("\n");
   int proc_number = proc.size;
   printf("In free pool: %d\n", free_proc_pool.in_pool);
+  print_pool();
   printf("Proc seek len is %d\n", proc.size);
 
   for (int i = 0; i < proc_number; i++) {
