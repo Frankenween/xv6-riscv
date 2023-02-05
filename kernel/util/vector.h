@@ -1,8 +1,10 @@
 #pragma once
 
 #include "kernel/types.h"
+#include "kernel/util/spinlock.h"
 
 // vector keeps uint64 or pointers
+// it can have an array of spinlocks if needed
 struct vector {
   int size;
   int capacity;
@@ -16,3 +18,4 @@ uint64 v_get(struct vector *v, int i);
 void v_set(struct vector *v, int i, uint64 val);
 void v_push_back(struct vector *v, uint64 val);
 void v_clear(struct vector *v);
+int v_replace_first_zero(struct vector *v, uint64 val);

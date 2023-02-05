@@ -12,10 +12,15 @@ void v_init(struct vector *v) {
 
 void v_grow(struct vector *v, int new_capacity) {
   uint64 *new_data = malloc(sizeof(uint64) * new_capacity);
-  if (new_data == 0) panic("grow failed");
+  if (new_data == 0) panic("grow failed: data");
+
+  uint64 cpy_mem = v->size;
+  if (cpy_mem > new_capacity) {
+    cpy_mem = new_capacity;
+  }
 
   memset(new_data, 0, new_capacity * sizeof(uint64)); // empty space is 0
-  memmove(new_data, v->data, v->size * sizeof(uint64));
+  memmove(new_data, v->data, cpy_mem * sizeof(uint64));
   if (v->data != 0) {
     kfree(v->data);
   }
@@ -35,7 +40,7 @@ void v_set(struct vector *v, int i, uint64 val) {
 
 void v_push_back(struct vector *v, uint64 val) {
   if (v->size == v->capacity) {
-    v_grow(v, (v->capacity == 0) ? 16 : v->capacity * 2); // Buddy leaf size
+    v_grow(v, (v->capacity == 0) ? 4 : v->capacity * 2); // Buddy leaf size
   }
   v->size++;
   v_set(v, v->size - 1, val);
@@ -47,4 +52,25 @@ void v_clear(struct vector *v) {
   if (v->data != 0) {
     kfree(v->data);
   }
+}
+
+int first_zero(struct vector *v) {
+  int i = 0;
+  for (; i < v->size; i++) {
+    if (v_get(v, i) == 0) return i;
+  }
+  return i;
+}
+
+int v_replace_first_zero(struct vector *v, uint64 val) {
+  int pos = first_zero(v);
+  if (pos == v->capacity) {
+    v_grow(v, (v->capacity == 0) ? 4 : v->capacity * 2);
+  }
+  if (pos == v->size) {
+    v_push_back(v, val);
+  } else {
+    v_set(v, pos, val);
+  }
+  return pos;
 }

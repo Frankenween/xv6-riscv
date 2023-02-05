@@ -36,7 +36,8 @@ OBJS = \
   $K/mem/buddy_alloc.o \
   $K/util/bitset.o \
   $K/util/free_mem_list.o \
-  $K/util/vector.o
+  $K/util/vector.o \
+  $K/util/protected_pointer.o
 
 # riscv64-unknown-elf- or riscv64-linux-gnu-
 # perhaps in /opt/riscv/bin
