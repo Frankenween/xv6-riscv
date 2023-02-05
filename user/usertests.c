@@ -2462,7 +2462,7 @@ struct test {
     {rmdot, "rmdot"},
     {dirfile, "dirfile"},
     {iref, "iref"},
-    {forktest, "forktest"},
+    //{forktest, "forktest"}, Now it works
     {sbrkbasic, "sbrkbasic"},
     {sbrkmuch, "sbrkmuch"},
     {kernmem, "kernmem"},

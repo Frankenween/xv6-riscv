@@ -114,6 +114,7 @@ struct proc {
   char name[16];                // Process name (debugging)
 
   int list_index;  // Index in proc table
+  int watching;
 };
 
 // swtch.S
