@@ -37,7 +37,7 @@ OBJS = \
   $K/util/bitset.o \
   $K/util/free_mem_list.o \
   $K/util/vector.o \
-  $K/util/protected_pointer.o
+  $K/proc/free_proc_pool.o \
 
 # riscv64-unknown-elf- or riscv64-linux-gnu-
 # perhaps in /opt/riscv/bin

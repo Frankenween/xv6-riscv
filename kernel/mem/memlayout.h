@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../riscv.h"
+
 // Physical memory layout
 
 // qemu -machine virt is set up like this,

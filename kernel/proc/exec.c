@@ -6,8 +6,6 @@
 #include "kernel/param.h"
 #include "kernel/printf.h"
 #include "kernel/proc/proc.h"
-#include "kernel/riscv.h"
-#include "kernel/types.h"
 #include "kernel/util/string.h"
 
 static int loadseg(pde_t *, uint64, struct inode *, uint, uint);

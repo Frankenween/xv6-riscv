@@ -1,5 +1,6 @@
 #include "proc.h"
 
+#include "free_proc_pool.h"
 #include "kernel/fs/fs.h"
 #include "kernel/fs/log.h"
 #include "kernel/mem/kalloc.h"
@@ -7,15 +8,18 @@
 #include "kernel/mem/vm.h"
 #include "kernel/printf.h"
 #include "kernel/util/string.h"
-#include "trap.h"
 #include "kernel/util/vector.h"
+#include "trap.h"
 
 struct cpu cpus[NCPU];
 
+// We don't need to sync when accessing size, it only grows
+// This is a vector, we lock it only when adding a process or accessing an
+// element
+// TODO: We can observe elements together, not just lock whole array
+//       Possibly: when looking for the empty space, use test_and_set
 struct vector proc;
 struct spinlock proc_lock;
-
-int proc_entities = 0;
 
 struct proc *initproc;
 
@@ -35,65 +39,10 @@ struct spinlock wait_lock;
 
 pagetable_t k_pagetable;
 
-
-struct {
-  // There can't be more than NCPU processes being watched
-  struct proc* freed[NCPU * 2];
-  struct spinlock pool_lock;
-  int in_pool;
-} free_proc_pool;
-
-void free_pool(int need_lock) {
-  if (need_lock) acquire(&free_proc_pool.pool_lock);
-  if (free_proc_pool.in_pool == 0) {
-    goto free_pool_end;
-  }
-  for (int i = 0; i < NCPU * 2; i++) {
-    struct proc *p = free_proc_pool.freed[i];
-    if (p != 0) {
-      if (p->watching == 0) {
-        kfree(p);
-        free_proc_pool.freed[i] = 0;
-        free_proc_pool.in_pool--;
-      }
-    }
-  }
-free_pool_end:
-  if (need_lock) release(&free_proc_pool.pool_lock);
-}
-
-void push_pool(struct proc *p) {
-  acquire(&free_proc_pool.pool_lock);
-  free_pool(0);
-  int i = 0;
-  for (; i < NCPU * 2; i++) {
-    if (free_proc_pool.freed[i] == 0) {
-      free_proc_pool.freed[i] = p;
-      free_proc_pool.in_pool++;
-      break;
-    }
-  }
-  if (i == NCPU * 2) panic("push to free pool failed");
-  release(&free_proc_pool.pool_lock);
-}
-
-void print_pool() {
-  printf("free pool\n");
-  for (int i = 0; i < NCPU * 2; i++) {
-    if (free_proc_pool.freed[i] != 0) {
-      printf("pid %d name %s\n",
-             free_proc_pool.freed[i]->pid,
-             free_proc_pool.freed[i]->name);
-    }
-  }
-}
-
 // Allocate a page for each process's kernel stack.
 // Map it high in memory, followed by an invalid
 // guard page.
-void proc_mapstacks(pagetable_t kpgtbl) {
-  k_pagetable = kpgtbl;
-}
+void proc_mapstacks(pagetable_t kpgtbl) { k_pagetable = kpgtbl; }
 
 // initialize the proc table.
 void procinit(void) {
@@ -101,7 +50,7 @@ void procinit(void) {
   initlock(&wait_lock, "wait_lock");
   v_init(&proc);
   initlock(&proc_lock, "proc lock");
-  initlock(&free_proc_pool.pool_lock, "pool lock");
+  init_pool();
 }
 
 // Must be called with interrupts disabled,
@@ -160,13 +109,16 @@ static struct proc *allocproc(void) {
     freeproc(p);
     return 0;
   }
-  if (mappages(k_pagetable, KSTACK(p->pid), PGSIZE, (uint64)kstack_page, PTE_R | PTE_W) != 0) {
+  // Here TLB doesn't fuck everything up because we use unique address
+  if (mappages(k_pagetable, KSTACK(p->pid), PGSIZE, (uint64)kstack_page,
+               PTE_R | PTE_W) != 0) {
     kfree(kstack_page);
     freeproc(p);
     return 0;
   }
+  // TODO: Reuse virtual addresses.
+  //       Problem: TLB keeps old physical address, so we need to flush it
   p->kstack = KSTACK(p->pid);
-
 
   // Allocate a trapframe page.
   if ((p->trapframe = (struct trapframe *)kalloc()) == 0) {
@@ -189,8 +141,10 @@ static struct proc *allocproc(void) {
 
   acquire(&proc_lock);
 
+  // TODO: do not panic if push_back failed
+  // Find first free space and put proc ptr there.
+  // So we won't skip a lot of free space in our functions
   p->list_index = v_replace_first_zero(&proc, (uint64)p);
-  proc_entities++;
 
   release(&proc_lock);
 
@@ -208,14 +162,13 @@ static void freeproc(struct proc *p) {
   if (p->list_index != -1) {
     acquire(&proc_lock);
     v_set(&proc, p->list_index, 0);
-    proc_entities--;
     release(&proc_lock);
-
-    push_pool(p);
   }
 
   release(&p->lock);
-  //kfree(p);
+  // Our struct is now unused, so we want to free it when nobody is accessing it
+  // anymore
+  push_pool(p);
 }
 
 // Create a user page table for a given process, with no user memory,
@@ -356,23 +309,30 @@ int fork(void) {
   return pid;
 }
 
+// Gets a process from a list, if it exists, we increment watching
+struct proc *claim_proc(int i) {
+  acquire(&proc_lock);
+  struct proc *p = (struct proc *)v_get(&proc, i);
+  release(&proc_lock);
+
+  if (p == 0) return 0;
+
+  // TODO: At this point we can free *p...
+  //       Solution: add watch counter in vector, remove from process
+
+  __sync_fetch_and_add(&p->watching, 1);
+  return p;
+}
+
 // Pass p's abandoned children to init.
 // Caller must hold wait_lock.
 void reparent(struct proc *p) {
   struct proc *pp;
 
-  acquire(&proc_lock);
   int proc_number = proc.size;
-  release(&proc_lock);
 
   for (int i = 0; i < proc_number; i++) {
-    acquire(&proc_lock);
-    pp = (struct proc *)v_get(&proc, i);
-    release(&proc_lock);
-
-    if (pp == 0) continue;
-
-    __sync_fetch_and_add(&pp->watching, 1);
+    if ((pp = claim_proc(i)) == 0) continue;
 
     if (pp->parent == p) {
       pp->parent = initproc;
@@ -437,19 +397,10 @@ int wait(uint64 addr) {
     // Scan through table looking for exited children.
     havekids = 0;
 
-    acquire(&proc_lock);
     int proc_number = proc.size;
-    release(&proc_lock);
 
     for (int i = 0; i < proc_number; i++) {
-
-      acquire(&proc_lock);
-      pp = (struct proc *)v_get(&proc, i);
-      release(&proc_lock);
-
-      if (pp == 0) continue;
-
-      __sync_fetch_and_add(&pp->watching, 1);
+      if ((pp = claim_proc(i)) == 0) continue;
 
       if (pp->parent == p) {
         // make sure the child isn't still in exit() or swtch().
@@ -501,25 +452,18 @@ void scheduler(void) {
 
   c->proc = 0;
   for (;;) {
+    // Maybe there are some processes waiting to be freed?
     if (++shed_rounds == 1000) {
       shed_rounds = 0;
       free_pool(1);
     }
-    acquire(&proc_lock);
     int proc_number = proc.size;
-    release(&proc_lock);
 
     // Avoid deadlock by ensuring that devices can interrupt.
     intr_on();
 
     for (int i = 0; i < proc_number; i++) {
-      acquire(&proc_lock);
-      p = (struct proc *)v_get(&proc, i);
-      release(&proc_lock);
-
-      if (p == 0) continue;
-
-      __sync_fetch_and_add(&p->watching, 1);
+      if ((p = claim_proc(i)) == 0) continue;
 
       acquire(&p->lock);
       if (p->state == RUNNABLE) {
@@ -624,18 +568,10 @@ void sleep(void *chan, struct spinlock *lk) {
 void wakeup(void *chan) {
   struct proc *p;
 
-  acquire(&proc_lock);
   int proc_number = proc.size;
-  release(&proc_lock);
 
   for (int i = 0; i < proc_number; i++) {
-    acquire(&proc_lock);
-    p = (struct proc *)v_get(&proc, i);
-    release(&proc_lock);
-
-    if (p == 0) continue;
-
-    __sync_fetch_and_add(&p->watching, 1);
+    if ((p = claim_proc(i)) == 0) continue;
 
     if (p != myproc()) {
       acquire(&p->lock);
@@ -654,18 +590,10 @@ void wakeup(void *chan) {
 int kill(int pid) {
   struct proc *p;
 
-  acquire(&proc_lock);
   int proc_number = proc.size;
-  release(&proc_lock);
 
   for (int i = 0; i < proc_number; i++) {
-    acquire(&proc_lock);
-    p = (struct proc *)v_get(&proc, i);
-    release(&proc_lock);
-
-    if (p == 0) continue;
-
-    __sync_fetch_and_add(&p->watching, 1);
+    if ((p = claim_proc(i)) == 0) continue;
 
     acquire(&p->lock);
     if (p->pid == pid) {
@@ -730,29 +658,28 @@ int either_copyin(void *dst, int user_src, uint64 src, uint64 len) {
 // No lock to avoid wedging a stuck machine further.
 void procdump(void) {
   static char *states[] = {
-      [UNUSED] "unused",   [USED] "used",      [SLEEPING] "sleep ",
+      [UNUSED] "unused",   [USED] "used",   [SLEEPING] "sleep ",
       [RUNNABLE] "runble", [RUNNING] "run", [ZOMBIE] "zombie"};
   struct proc *p;
   char *state;
 
   printf("\n");
   int proc_number = proc.size;
-  printf("In free pool: %d\n", free_proc_pool.in_pool);
   print_pool();
   printf("Proc seek len is %d\n", proc.size);
 
   for (int i = 0; i < proc_number; i++) {
     p = (struct proc *)v_get(&proc, i);
 
-    if (p == 0) continue ;
+    if (p == 0) continue;
 
     if (p->state == UNUSED) continue;
     if (p->state >= 0 && p->state < NELEM(states) && states[p->state])
       state = states[p->state];
     else
       state = "???";
-    printf("pid = %d; state = %s; name = %s; ind = %d",
-           p->pid, state, p->name, p->list_index);
+    printf("pid = %d; state = %s; name = %s; ind = %d", p->pid, state, p->name,
+           p->list_index);
     printf("\n");
   }
 }

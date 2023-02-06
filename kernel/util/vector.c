@@ -1,7 +1,7 @@
 #include "vector.h"
 
-#include "kernel/printf.h"
 #include "kernel/mem/kalloc.h"
+#include "kernel/printf.h"
 #include "string.h"
 
 void v_init(struct vector *v) {
@@ -19,7 +19,7 @@ void v_grow(struct vector *v, int new_capacity) {
     cpy_mem = new_capacity;
   }
 
-  memset(new_data, 0, new_capacity * sizeof(uint64)); // empty space is 0
+  memset(new_data, 0, new_capacity * sizeof(uint64));  // empty space is 0
   memmove(new_data, v->data, cpy_mem * sizeof(uint64));
   if (v->data != 0) {
     kfree(v->data);
@@ -40,9 +40,9 @@ void v_set(struct vector *v, int i, uint64 val) {
 
 void v_push_back(struct vector *v, uint64 val) {
   if (v->size == v->capacity) {
-    v_grow(v, (v->capacity == 0) ? 4 : v->capacity * 2); // Buddy leaf size
+    v_grow(v, (v->capacity == 0) ? 4 : v->capacity * 2);  // Buddy leaf size
   }
-  v->size++;
+  __sync_fetch_and_add(&v->size, 1);
   v_set(v, v->size - 1, val);
 }
 
@@ -73,4 +73,12 @@ int v_replace_first_zero(struct vector *v, uint64 val) {
     v_set(v, pos, val);
   }
   return pos;
+}
+
+uint64 v_pop_back(struct vector *v) {
+  if (v->size == 0) {
+    panic("vector pop back");
+  }
+  v->size--;
+  return v->data[v->size];
 }
