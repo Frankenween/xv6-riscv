@@ -16,14 +16,8 @@
 #include "kernel/util/string.h"
 
 struct devsw devsw[NDEV];
-//struct {
-//  struct spinlock lock;
-//  struct file file[NFILE];
-//} ftable;
 
-void fileinit(void) {
-  //initlock(&ftable.lock, "ftable");
-}
+void fileinit(void) {}
 
 // Allocate a file structure.
 struct file *filealloc(void) {

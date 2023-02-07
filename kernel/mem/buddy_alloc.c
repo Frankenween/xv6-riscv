@@ -66,7 +66,7 @@ void *malloc_buddy(uint64 n) {
     release(&lock);
     return 0;
   }
-  __sync_sub_and_fetch(&free_mem, BLK_SIZE(fk));
+  free_mem -= BLK_SIZE(fk);
   char *p = fm_list_pop(&lvl_sizes[k].free);
   bit_invert(lvl_sizes[k].allocated, ptr_block_index(k, p) >> 1);
   for (; k > fk; k--) {
@@ -94,7 +94,6 @@ void free_buddy(void *p) {
   int k = ptr_block_size(p);
 
   acquire(&lock);
-  __sync_add_and_fetch(&free_mem, BLK_SIZE(k));
   free_mem += BLK_SIZE(k);
   for (; k < MAXSIZE; k++) {
     uint64 block_index = ptr_block_index(k, p);
@@ -117,7 +116,7 @@ void free_buddy(void *p) {
   release(&lock);
 }
 
-uint64 havemem_buddy() { return __sync_add_and_fetch(&free_mem, 0); }
+uint64 havemem_buddy() { return free_mem; }
 
 // First block with size k that doesn't contain p
 uint64 next_block_index(int k, char *p) {
