@@ -10,6 +10,7 @@
 #include "kernel/util/string.h"
 #include "kernel/util/vector.h"
 #include "trap.h"
+#include "kstack_provider.h"
 
 struct cpu cpus[NCPU];
 
@@ -109,16 +110,14 @@ static struct proc *allocproc(void) {
     freeproc(p);
     return 0;
   }
-  // Here TLB doesn't fuck everything up because we use unique address
-  if (mappages(k_pagetable, KSTACK(p->pid), PGSIZE, (uint64)kstack_page,
+  uint64 kstack_va = get_kstack_va();
+  if (mappages(k_pagetable, kstack_va, PGSIZE, (uint64)kstack_page,
                PTE_R | PTE_W) != 0) {
     kfree(kstack_page);
     freeproc(p);
     return 0;
   }
-  // TODO: Reuse virtual addresses.
-  //       Problem: TLB keeps old physical address, so we need to flush it
-  p->kstack = KSTACK(p->pid);
+  p->kstack = kstack_va;
 
   // Allocate a trapframe page.
   if ((p->trapframe = (struct trapframe *)kalloc()) == 0) {
@@ -157,7 +156,11 @@ static struct proc *allocproc(void) {
 static void freeproc(struct proc *p) {
   if (p->trapframe) kfree((void *)p->trapframe);
   if (p->pagetable) proc_freepagetable(p->pagetable, p->sz);
-  if (p->kstack) uvmunmap(k_pagetable, p->kstack, 1, 1);
+  if (p->kstack) {
+    uvmunmap(k_pagetable, p->kstack, 1, 1);
+    return_kstack_va(p->kstack);
+  }
+
 
   if (p->list_index != -1) {
     acquire(&proc_lock);
@@ -472,6 +475,13 @@ void scheduler(void) {
         // before jumping back to us.
         p->state = RUNNING;
         c->proc = p;
+
+        // We need to flush kstack va from tlb because there can be wrong
+        // mapping from and old process.
+        // TODO: Add a flag that shows if this va has already been flushed
+        //  on this hart. Bitmask, for example
+        sfence_vma_va(p->kstack);
+
         swtch(&c->context, &p->context);
 
         // Process is done running for now.
