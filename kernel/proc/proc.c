@@ -52,6 +52,7 @@ void procinit(void) {
   v_init(&proc);
   initlock(&proc_lock, "proc lock");
   init_pool();
+  init_kstack_provider();
 }
 
 // Must be called with interrupts disabled,
@@ -140,10 +141,14 @@ static struct proc *allocproc(void) {
 
   acquire(&proc_lock);
 
-  // TODO: do not panic if push_back failed
   // Find first free space and put proc ptr there.
   // So we won't skip a lot of free space in our functions
   p->list_index = v_replace_first_zero(&proc, (uint64)p);
+  if (p->list_index < 0) {
+    p->list_index = 0;
+    freeproc(p);
+    return 0;
+  }
 
   release(&proc_lock);
 

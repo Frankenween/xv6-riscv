@@ -10,9 +10,11 @@ void v_init(struct vector *v) {
   v->data = 0;
 }
 
-void v_grow(struct vector *v, int new_capacity) {
+int v_grow(struct vector *v, int new_capacity) {
   uint64 *new_data = malloc(sizeof(uint64) * new_capacity);
-  if (new_data == 0) panic("grow failed: data");
+  if (new_data == 0) {
+    return -1;
+  }
 
   uint64 cpy_mem = v->size;
   if (cpy_mem > new_capacity) {
@@ -26,6 +28,7 @@ void v_grow(struct vector *v, int new_capacity) {
   }
   v->data = new_data;
   v->capacity = new_capacity;
+  return 0;
 }
 
 uint64 v_get(struct vector *v, int i) {
@@ -38,12 +41,13 @@ void v_set(struct vector *v, int i, uint64 val) {
   v->data[i] = val;
 }
 
-void v_push_back(struct vector *v, uint64 val) {
+int v_push_back(struct vector *v, uint64 val) {
   if (v->size == v->capacity) {
-    v_grow(v, (v->capacity == 0) ? 4 : v->capacity * 2);  // Buddy leaf size
+    if (v_grow(v, (v->capacity == 0) ? 4 : v->capacity * 2) != 0) return -1;
   }
   __sync_fetch_and_add(&v->size, 1);
   v_set(v, v->size - 1, val);
+  return 0;
 }
 
 void v_clear(struct vector *v) {
@@ -65,10 +69,10 @@ int first_zero(struct vector *v) {
 int v_replace_first_zero(struct vector *v, uint64 val) {
   int pos = first_zero(v);
   if (pos == v->capacity) {
-    v_grow(v, (v->capacity == 0) ? 4 : v->capacity * 2);
+    if (v_grow(v, (v->capacity == 0) ? 4 : v->capacity * 2)) return -1;
   }
   if (pos == v->size) {
-    v_push_back(v, val);
+    v_push_back(v, val); // here success guaranteed
   } else {
     v_set(v, pos, val);
   }
