@@ -5,15 +5,15 @@
 #include "file.h"
 
 #include "kernel/fs/fs.h"
+#include "kernel/mem/kalloc.h"
 #include "kernel/mem/vm.h"
 #include "kernel/param.h"
 #include "kernel/pipe.h"
 #include "kernel/printf.h"
 #include "kernel/proc/proc.h"
+#include "kernel/util/string.h"
 #include "log.h"
 #include "stat.h"
-#include "kernel/mem/kalloc.h"
-#include "kernel/util/string.h"
 
 struct devsw devsw[NDEV];
 
@@ -41,7 +41,6 @@ struct file *filedup(struct file *f) {
 
 // Close file f.  (Decrement ref count, close when reaches 0.)
 void fileclose(struct file *f) {
-
   acquire(&f->lock);
   if (f->ref < 1) panic("fileclose");
   if (--f->ref > 0) {

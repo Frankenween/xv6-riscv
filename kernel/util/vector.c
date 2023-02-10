@@ -41,6 +41,15 @@ void v_set(struct vector *v, int i, uint64 val) {
   v->data[i] = val;
 }
 
+void v_add(struct vector *v, int i, uint64 val) {
+  if (v->size <= i) panic("vector out of bounds add");
+  __sync_fetch_and_add(&v->data[i], val);
+}
+void v_sub(struct vector *v, int i, uint64 val) {
+  if (v->size <= i) panic("vector out of bounds sub");
+  __sync_fetch_and_sub(&v->data[i], val);
+}
+
 int v_push_back(struct vector *v, uint64 val) {
   if (v->size == v->capacity) {
     if (v_grow(v, (v->capacity == 0) ? 4 : v->capacity * 2) != 0) return -1;
@@ -72,7 +81,7 @@ int v_replace_first_zero(struct vector *v, uint64 val) {
     if (v_grow(v, (v->capacity == 0) ? 4 : v->capacity * 2)) return -1;
   }
   if (pos == v->size) {
-    v_push_back(v, val); // here success guaranteed
+    v_push_back(v, val);  // here success guaranteed
   } else {
     v_set(v, pos, val);
   }
@@ -85,4 +94,9 @@ uint64 v_pop_back(struct vector *v) {
   }
   v->size--;
   return v->data[v->size];
+}
+
+void v_resize(struct vector *v, int new_size) {
+  if (v->capacity < new_size) panic("v_resize: capacity lesser");
+  v->size = new_size;
 }

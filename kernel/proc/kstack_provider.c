@@ -28,6 +28,6 @@ uint64 get_kstack_va() {
 
 void return_kstack_va(uint64 va) {
   acquire(&lock);
-  v_push_back(&pool, va); // it's OK if push failed
+  v_push_back(&pool, va);  // it's OK if push failed
   release(&lock);
 }
