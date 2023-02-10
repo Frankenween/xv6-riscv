@@ -477,13 +477,13 @@ int wait(uint64 addr) {
 void scheduler(void) {
   struct proc *p;
   struct cpu *c = mycpu();
-  int shed_rounds = 0;
+  int sched_rounds = 0;
 
   c->proc = 0;
   for (;;) {
     // Maybe there are some processes waiting to be freed?
-    if (++shed_rounds == 1000) {
-      shed_rounds = 0;
+    if (++sched_rounds == 1000) {
+      sched_rounds = 0;
       free_pool(1);
     }
     int proc_number = proc_list_size();
