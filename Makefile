@@ -1,3 +1,6 @@
+MKFILE_PATH = $(abspath $(firstword $(MAKEFILE_LIST)))
+MKFILE_DIR = $(patsubst %/,%,$(dir $(MKFILE_PATH)))
+
 K=kernel
 U=user
 
@@ -32,7 +35,10 @@ OBJS = \
   $K/mem/pool_alloc.o \
   $K/mem/buddy_alloc.o \
   $K/util/bitset.o \
-  $K/util/free_mem_list.o
+  $K/util/free_mem_list.o \
+  $K/util/vector.o \
+  $K/proc/free_proc_pool.o \
+  $K/proc/kstack_provider.o
 
 # riscv64-unknown-elf- or riscv64-linux-gnu-
 # perhaps in /opt/riscv/bin
@@ -56,12 +62,12 @@ QEMU = qemu-system-riscv64
 
 CC = $(TOOLPREFIX)gcc
 CPP = $(TOOLPREFIX)g++
-AS = $(TOOLPREFIX)gas
+AS = $(TOOLPREFIX)as
 LD = $(TOOLPREFIX)ld
 OBJCOPY = $(TOOLPREFIX)objcopy
 OBJDUMP = $(TOOLPREFIX)objdump
 
-CFLAGS = -Wall -Werror -O -fno-omit-frame-pointer -ggdb -gdwarf-2
+CFLAGS = -Wall -Werror -O0 -fno-omit-frame-pointer -ggdb -gdwarf-2
 CFLAGS += -MD
 CFLAGS += -mcmodel=medany
 CFLAGS += -ffreestanding -fno-common -nostdlib -mno-relax
@@ -140,6 +146,7 @@ UPROGS=\
 	$U/_grind\
 	$U/_wc\
 	$U/_zombie\
+	$U/_alloctest\
 
 fs.img: mkfs/mkfs README $(UPROGS)
 	mkfs/mkfs fs.img README $(UPROGS)
@@ -172,11 +179,38 @@ QEMUOPTS += -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
 qemu: $K/kernel fs.img
 	$(QEMU) $(QEMUOPTS)
 
-.gdbinit: .gdbinit.tmpl-riscv
-	sed "s/:1234/:$(GDBPORT)/" < $^ > $@
+SEARCH_LINE=target remote 127.0.0.1:1234
 
-qemu-gdb: $K/kernel .gdbinit fs.img
+GDB_CONFIG_FILE_DIR=~/.config/gdb
+GDB_CONFIG_FILE=$(GDB_CONFIG_FILE_DIR)/gdbinit
+
+.gdbinit: .gdbinit.tmpl-riscv
+#    Generate .gdbinit
+	@sed "s/$(SEARCH_LINE)/$(INSERTED_LINE)$(GDBPORT)/" < $^ > $@
+#    Make gdb autoload config files
+	@mkdir -p $(GDB_CONFIG_FILE_DIR)
+	@echo add-auto-load-safe-path $(MKFILE_DIR)/$@ >> $(GDB_CONFIG_FILE)
+
+SYMBOL_FILE = "$$"PROJECT_DIR"$$"/kernel/kernel
+
+TOOLCHAIN_NAME=xv6-toolchain
+CONFIG_XML=\<component name=\"ProjectRunConfigurationManager\"\>\\n \
+  \<configuration default=\"false\" name=\"kernel\" type=\"CLion_Remote\" \
+      version=\"1\" remoteCommand=\"tcp::$(GDBPORT)\"\ symbolFile=\"$(SYMBOL_FILE)\" \>\\n \
+    \<debugger toolchainName=\"$(TOOLCHAIN_NAME)\" /\>\\n \
+    \<method v=\"2\" /\>\\n \
+  \</configuration\>\\n \
+\</component\>
+
+clion-debug: .gdbinit
+#    Generate run configuration for remote debugging
+	@mkdir -p $(MKFILE_DIR)/.idea/runConfigurations/
+	@echo $(CONFIG_XML) >$(MKFILE_DIR)/.idea/runConfigurations/remoteKernelDebug.xml
+
+qemu-gdb: $K/kernel .gdbinit clion-debug fs.img
 	@echo "*** Now run 'gdb' in another window." 1>&2
 	$(QEMU) $(QEMUOPTS) -S $(QEMUGDB)
 
 all: qemu
+
+.PHONY: clean

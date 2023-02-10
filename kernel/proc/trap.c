@@ -6,10 +6,7 @@
 #include "kernel/mem/memlayout.h"
 #include "kernel/printf.h"
 #include "kernel/proc/proc.h"
-#include "kernel/riscv.h"
 #include "kernel/syscall.h"
-#include "kernel/types.h"
-#include "kernel/util/spinlock.h"
 
 struct spinlock tickslock;
 uint ticks;

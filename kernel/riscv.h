@@ -240,6 +240,10 @@ static inline void sfence_vma() {
   asm volatile("sfence.vma zero, zero");
 }
 
+static inline void sfence_vma_va(uint64 va) {
+  asm volatile("sfence.vma %0, zero" : : "r"(va));
+}
+
 typedef uint64 pte_t;
 typedef uint64 *pagetable_t;  // 512 PTEs
 

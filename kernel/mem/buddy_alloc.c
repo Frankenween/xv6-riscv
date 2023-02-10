@@ -14,7 +14,7 @@ static int nsizes;  // the number of entries in bd_sizes array
 #define LEAF_SIZE 16          // The smallest block size
 #define MAXSIZE (nsizes - 1)  // Largest index in bd_sizes array
 #define BLK_SIZE(k) ((1L << (k)) * LEAF_SIZE)  // Size of block at size k
-#define NBLK(k) (1 << (MAXSIZE - k))  // Number of block at size k
+#define NBLK(k) (1 << (MAXSIZE - k))           // Number of block at size k
 #define ROUNDUP(n, sz) \
   (((((n)-1) / (sz)) + 1) * (sz))  // Round up to the next multiple of sz
 
@@ -30,6 +30,7 @@ struct level_info {
 static struct level_info *lvl_sizes;
 static void *allocator_base;
 static struct spinlock lock;
+static uint64 free_mem;
 
 int first_level_contains(uint64 n) {
   int lvl = 0;
@@ -65,6 +66,7 @@ void *malloc_buddy(uint64 n) {
     release(&lock);
     return 0;
   }
+  free_mem -= BLK_SIZE(fk);
   char *p = fm_list_pop(&lvl_sizes[k].free);
   bit_invert(lvl_sizes[k].allocated, ptr_block_index(k, p) >> 1);
   for (; k > fk; k--) {
@@ -92,6 +94,7 @@ void free_buddy(void *p) {
   int k = ptr_block_size(p);
 
   acquire(&lock);
+  free_mem += BLK_SIZE(k);
   for (; k < MAXSIZE; k++) {
     uint64 block_index = ptr_block_index(k, p);
     uint64 buddy = ((block_index & 1) == 0) ? block_index + 1 : block_index - 1;
@@ -112,6 +115,8 @@ void free_buddy(void *p) {
 
   release(&lock);
 }
+
+uint64 havemem_buddy() { return free_mem; }
 
 // First block with size k that doesn't contain p
 uint64 next_block_index(int k, char *p) {
@@ -258,6 +263,7 @@ void init_buddy(void *base, void *end) {
 
   // initialize free lists for each size k
   uint64 free = bd_initfree(p, bd_end);
+  free_mem = free;
 
   // check if the amount that is free is what we expect
   if (free != BLK_SIZE(MAXSIZE) - meta - unavailable) {

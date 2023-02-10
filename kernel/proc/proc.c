@@ -1,21 +1,26 @@
 #include "proc.h"
 
+#include "free_proc_pool.h"
 #include "kernel/fs/fs.h"
 #include "kernel/fs/log.h"
 #include "kernel/mem/kalloc.h"
 #include "kernel/mem/memlayout.h"
 #include "kernel/mem/vm.h"
-#include "kernel/param.h"
 #include "kernel/printf.h"
-#include "kernel/riscv.h"
-#include "kernel/types.h"
-#include "kernel/util/spinlock.h"
 #include "kernel/util/string.h"
+#include "kernel/util/vector.h"
+#include "kstack_provider.h"
 #include "trap.h"
 
 struct cpu cpus[NCPU];
 
-struct proc proc[NPROC];
+// We don't need to sync when accessing size, it only grows
+// This is a vector, we lock it only when adding a process or accessing an
+// element
+struct {
+  struct vector proc;
+  struct spinlock proc_lock;
+} proc_list;
 
 struct proc *initproc;
 
@@ -33,31 +38,69 @@ extern char trampoline[];  // trampoline.S
 // must be acquired before any p->lock.
 struct spinlock wait_lock;
 
+pagetable_t k_pagetable;
+
+void proc_list_init() {
+  v_init(&proc_list.proc);
+  initlock(&proc_list.proc_lock, "proc lock");
+}
+
+// Find first free space in a proc list and put a proc ptr there.
+// So we won't skip a lot of free space in our functions
+// Returns a position where ptr is places, or -1 on failure
+int push_proc(struct proc *p) {
+  acquire(&proc_list.proc_lock);
+  int pos = v_replace_first_zero(&proc_list.proc, (uint64)p);
+  release(&proc_list.proc_lock);
+  return pos;
+}
+
+// Remove proc from a proc list
+void remove_proc_from_list(struct proc *p) {
+  if (p->list_index == -1) return;
+  acquire(&proc_list.proc_lock);
+  v_set(&proc_list.proc, p->list_index, 0);
+  release(&proc_list.proc_lock);
+}
+
+// Get i-th element from a proc list, and if it exists increase p->watching
+// while holding a lock, so we'll avoid NPE
+// Elements of the proc list must be accessed by this method only
+struct proc *claim_proc(int i) {
+  acquire(&proc_list.proc_lock);
+  struct proc *p = (struct proc *)v_get(&proc_list.proc, i);
+
+  if (p == 0) {
+    release(&proc_list.proc_lock);
+    return 0;
+  }
+  // Here sync is needed because stop_watching_proc accesses this field without
+  // any lock
+  __sync_fetch_and_add(&p->watching, 1);
+  release(&proc_list.proc_lock);
+
+  return p;
+}
+
+// When we are no longer using p, we can stop watching it
+void stop_watching_proc(struct proc *p) {
+  __sync_fetch_and_sub(&p->watching, 1);
+}
+
+int proc_list_size() { return proc_list.proc.size; }
+
 // Allocate a page for each process's kernel stack.
 // Map it high in memory, followed by an invalid
 // guard page.
-void proc_mapstacks(pagetable_t kpgtbl) {
-  struct proc *p;
-
-  for (p = proc; p < &proc[NPROC]; p++) {
-    char *pa = kalloc();
-    if (pa == 0) panic("kalloc");
-    uint64 va = KSTACK((int)(p - proc));
-    kvmmap(kpgtbl, va, (uint64)pa, PGSIZE, PTE_R | PTE_W);
-  }
-}
+void proc_mapstacks(pagetable_t kpgtbl) { k_pagetable = kpgtbl; }
 
 // initialize the proc table.
 void procinit(void) {
-  struct proc *p;
-
   initlock(&pid_lock, "nextpid");
   initlock(&wait_lock, "wait_lock");
-  for (p = proc; p < &proc[NPROC]; p++) {
-    initlock(&p->lock, "proc");
-    p->state = UNUSED;
-    p->kstack = KSTACK((int)(p - proc));
-  }
+  proc_list_init();
+  init_pool();
+  init_kstack_provider();
 }
 
 // Must be called with interrupts disabled,
@@ -101,26 +144,33 @@ int allocpid() {
 // and return with p->lock held.
 // If there are no free procs, or a memory allocation fails, return 0.
 static struct proc *allocproc(void) {
-  struct proc *p;
+  struct proc *p = malloc(sizeof(struct proc));
+  if (p == 0) return 0;
+  memset(p, 0, sizeof(struct proc));
 
-  for (p = proc; p < &proc[NPROC]; p++) {
-    acquire(&p->lock);
-    if (p->state == UNUSED) {
-      goto found;
-    } else {
-      release(&p->lock);
-    }
-  }
-  return 0;
-
-found:
+  initlock(&p->lock, "p_lock");
+  acquire(&p->lock);
   p->pid = allocpid();
   p->state = USED;
+  p->list_index = -1;
+
+  void *kstack_page = kalloc();
+  if (kstack_page == 0) {
+    freeproc(p);
+    return 0;
+  }
+  uint64 kstack_va = get_kstack_va();
+  if (mappages(k_pagetable, kstack_va, PGSIZE, (uint64)kstack_page,
+               PTE_R | PTE_W) != 0) {
+    kfree(kstack_page);
+    freeproc(p);
+    return 0;
+  }
+  p->kstack = kstack_va;
 
   // Allocate a trapframe page.
   if ((p->trapframe = (struct trapframe *)kalloc()) == 0) {
     freeproc(p);
-    release(&p->lock);
     return 0;
   }
 
@@ -128,7 +178,6 @@ found:
   p->pagetable = proc_pagetable(p);
   if (p->pagetable == 0) {
     freeproc(p);
-    release(&p->lock);
     return 0;
   }
 
@@ -138,6 +187,13 @@ found:
   p->context.ra = (uint64)forkret;
   p->context.sp = p->kstack + PGSIZE;
 
+  // Put process in a process list
+  p->list_index = push_proc(p);
+  if (p->list_index < 0) {
+    p->list_index = 0;
+    freeproc(p);
+    return 0;
+  }
   return p;
 }
 
@@ -146,17 +202,17 @@ found:
 // p->lock must be held.
 static void freeproc(struct proc *p) {
   if (p->trapframe) kfree((void *)p->trapframe);
-  p->trapframe = 0;
   if (p->pagetable) proc_freepagetable(p->pagetable, p->sz);
-  p->pagetable = 0;
-  p->sz = 0;
-  p->pid = 0;
-  p->parent = 0;
-  p->name[0] = 0;
-  p->chan = 0;
-  p->killed = 0;
-  p->xstate = 0;
-  p->state = UNUSED;
+  if (p->kstack) {
+    uvmunmap(k_pagetable, p->kstack, 1, 1);
+    return_kstack_va(p->kstack);
+  }
+  remove_proc_from_list(p);
+  release(&p->lock);
+
+  // Our struct is now unused, so we want to free it when nobody is accessing it
+  // anymore
+  push_pool(p);
 }
 
 // Create a user page table for a given process, with no user memory,
@@ -265,7 +321,6 @@ int fork(void) {
   // Copy user memory from parent to child.
   if (uvmcopy(p->pagetable, np->pagetable, p->sz) < 0) {
     freeproc(np);
-    release(&np->lock);
     return -1;
   }
   np->sz = p->sz;
@@ -303,11 +358,16 @@ int fork(void) {
 void reparent(struct proc *p) {
   struct proc *pp;
 
-  for (pp = proc; pp < &proc[NPROC]; pp++) {
+  int proc_number = proc_list_size();
+
+  for (int i = 0; i < proc_number; i++) {
+    if ((pp = claim_proc(i)) == 0) continue;
+
     if (pp->parent == p) {
       pp->parent = initproc;
       wakeup(initproc);
     }
+    stop_watching_proc(pp);
   }
 }
 
@@ -365,7 +425,12 @@ int wait(uint64 addr) {
   for (;;) {
     // Scan through table looking for exited children.
     havekids = 0;
-    for (pp = proc; pp < &proc[NPROC]; pp++) {
+
+    int proc_number = proc_list_size();
+
+    for (int i = 0; i < proc_number; i++) {
+      if ((pp = claim_proc(i)) == 0) continue;
+
       if (pp->parent == p) {
         // make sure the child isn't still in exit() or swtch().
         acquire(&pp->lock);
@@ -378,15 +443,17 @@ int wait(uint64 addr) {
                                    sizeof(pp->xstate)) < 0) {
             release(&pp->lock);
             release(&wait_lock);
+            stop_watching_proc(pp);
             return -1;
           }
           freeproc(pp);
-          release(&pp->lock);
           release(&wait_lock);
+          stop_watching_proc(pp);
           return pid;
         }
         release(&pp->lock);
       }
+      stop_watching_proc(pp);
     }
 
     // No point waiting if we don't have any children.
@@ -410,13 +477,23 @@ int wait(uint64 addr) {
 void scheduler(void) {
   struct proc *p;
   struct cpu *c = mycpu();
+  int sched_rounds = 0;
 
   c->proc = 0;
   for (;;) {
+    // Maybe there are some processes waiting to be freed?
+    if (++sched_rounds == 1000) {
+      sched_rounds = 0;
+      free_pool(1);
+    }
+    int proc_number = proc_list_size();
+
     // Avoid deadlock by ensuring that devices can interrupt.
     intr_on();
 
-    for (p = proc; p < &proc[NPROC]; p++) {
+    for (int i = 0; i < proc_number; i++) {
+      if ((p = claim_proc(i)) == 0) continue;
+
       acquire(&p->lock);
       if (p->state == RUNNABLE) {
         // Switch to chosen process.  It is the process's job
@@ -424,6 +501,13 @@ void scheduler(void) {
         // before jumping back to us.
         p->state = RUNNING;
         c->proc = p;
+
+        // We need to flush kstack va from tlb because there can be wrong
+        // mapping from and old process.
+        // TODO: Add a flag that shows if this va has already been flushed
+        //  on this hart. Bitmask, for example
+        sfence_vma_va(p->kstack);
+
         swtch(&c->context, &p->context);
 
         // Process is done running for now.
@@ -431,6 +515,8 @@ void scheduler(void) {
         c->proc = 0;
       }
       release(&p->lock);
+
+      stop_watching_proc(p);
     }
   }
 }
@@ -518,7 +604,11 @@ void sleep(void *chan, struct spinlock *lk) {
 void wakeup(void *chan) {
   struct proc *p;
 
-  for (p = proc; p < &proc[NPROC]; p++) {
+  int proc_number = proc_list_size();
+
+  for (int i = 0; i < proc_number; i++) {
+    if ((p = claim_proc(i)) == 0) continue;
+
     if (p != myproc()) {
       acquire(&p->lock);
       if (p->state == SLEEPING && p->chan == chan) {
@@ -526,6 +616,7 @@ void wakeup(void *chan) {
       }
       release(&p->lock);
     }
+    stop_watching_proc(p);
   }
 }
 
@@ -535,7 +626,11 @@ void wakeup(void *chan) {
 int kill(int pid) {
   struct proc *p;
 
-  for (p = proc; p < &proc[NPROC]; p++) {
+  int proc_number = proc_list_size();
+
+  for (int i = 0; i < proc_number; i++) {
+    if ((p = claim_proc(i)) == 0) continue;
+
     acquire(&p->lock);
     if (p->pid == pid) {
       p->killed = 1;
@@ -544,9 +639,11 @@ int kill(int pid) {
         p->state = RUNNABLE;
       }
       release(&p->lock);
+      stop_watching_proc(p);
       return 0;
     }
     release(&p->lock);
+    stop_watching_proc(p);
   }
   return -1;
 }
@@ -597,19 +694,28 @@ int either_copyin(void *dst, int user_src, uint64 src, uint64 len) {
 // No lock to avoid wedging a stuck machine further.
 void procdump(void) {
   static char *states[] = {
-      [UNUSED] "unused",   [USED] "used",      [SLEEPING] "sleep ",
-      [RUNNABLE] "runble", [RUNNING] "run   ", [ZOMBIE] "zombie"};
+      [UNUSED] "unused",   [USED] "used",   [SLEEPING] "sleep ",
+      [RUNNABLE] "runble", [RUNNING] "run", [ZOMBIE] "zombie"};
   struct proc *p;
   char *state;
 
   printf("\n");
-  for (p = proc; p < &proc[NPROC]; p++) {
+  int proc_number = proc_list_size();
+  print_pool();
+  printf("Proc seek len is %d\n", proc_number);
+
+  for (int i = 0; i < proc_number; i++) {
+    p = (struct proc *)v_get(&proc_list.proc, i);
+
+    if (p == 0) continue;
+
     if (p->state == UNUSED) continue;
     if (p->state >= 0 && p->state < NELEM(states) && states[p->state])
       state = states[p->state];
     else
       state = "???";
-    printf("%d %s %s", p->pid, state, p->name);
+    printf("pid = %d; state = %s; name = %s; ind = %d", p->pid, state, p->name,
+           p->list_index);
     printf("\n");
   }
 }
