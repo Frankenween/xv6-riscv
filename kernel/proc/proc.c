@@ -475,6 +475,9 @@ int wait(uint64 addr) {
 //  - eventually that process transfers control
 //    via swtch back to the scheduler.
 void scheduler(void) {
+  // TODO: hart 0 looks is a proc list is unbalanced.
+  //  If so, it waits until every hart reaches barrier, disables interruptions,
+  //  and then reorders all processes.
   struct proc *p;
   struct cpu *c = mycpu();
   int sched_rounds = 0;
