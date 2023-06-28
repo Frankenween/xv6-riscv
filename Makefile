@@ -38,7 +38,8 @@ OBJS = \
   $K/util/free_mem_list.o \
   $K/util/vector.o \
   $K/proc/free_proc_pool.o \
-  $K/proc/kstack_provider.o
+  $K/proc/kstack_provider.o \
+  $K/util/rw_lock.o
 
 # riscv64-unknown-elf- or riscv64-linux-gnu-
 # perhaps in /opt/riscv/bin
@@ -168,7 +169,7 @@ QEMUGDB = $(shell if $(QEMU) -help | grep -q '^-gdb'; \
 	then echo "-gdb tcp::$(GDBPORT)"; \
 	else echo "-s -p $(GDBPORT)"; fi)
 ifndef CPUS
-CPUS := 3
+CPUS := 5
 endif
 
 QEMUOPTS = -machine virt -bios none -kernel $K/kernel -m 128M -smp $(CPUS) -nographic
