@@ -18,10 +18,6 @@ int v_grow(struct vector *v, int new_capacity);
 uint64 v_get(struct vector *v, int i);
 void v_set(struct vector *v, int i, uint64 val);
 
-// Add and sub can be called concurrently
-void v_add(struct vector *v, int i, uint64 val);
-void v_sub(struct vector *v, int i, uint64 val);
-
 // Returns 0 on success, -1 otherwise
 int v_push_back(struct vector *v, uint64 val);
 void v_clear(struct vector *v);
