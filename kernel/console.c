@@ -30,8 +30,20 @@ void consputc(int c) {
     uartputc_sync('\b');
     uartputc_sync(' ');
     uartputc_sync('\b');
+  } else if (c == '\n') {
+    uartputc_sync('\r');
+    uartputc_sync('\n');
   } else {
     uartputc_sync(c);
+  }
+}
+
+void console_write_char(int c) {
+  if (c == '\n') {
+    uartputc('\r');
+    uartputc('\n');
+  } else {
+    uartputc(c);
   }
 }
 
@@ -55,7 +67,7 @@ int consolewrite(int user_src, uint64 src, int n) {
   for (i = 0; i < n; i++) {
     char c;
     if (either_copyin(&c, user_src, src + i, 1) == -1) break;
-    uartputc(c);
+    console_write_char(c);
   }
 
   return i;
