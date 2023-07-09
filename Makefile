@@ -121,8 +121,8 @@ $U/_forktest: $U/forktest.o $(ULIB)
 $U/%.o : $U/%.cpp
 	$(CC) $(CFLAGS) -x c++ -c -o $@ $<
 
-mkfs/mkfs: mkfs/mkfs.c $K/fs/fs.h $K/param.h
-	gcc -Werror -Wall -I. -o mkfs/mkfs mkfs/mkfs.c
+mkfs/mkfs: mkfs/make_fs.cpp $K/fs/fs.h $K/param.h
+	g++ -Werror -Wall -I. -o mkfs/mkfs mkfs/make_fs.cpp
 
 # Prevent deletion of intermediate files, e.g. cat.o, after first build, so
 # that disk image changes after first build are persistent until clean.  More
