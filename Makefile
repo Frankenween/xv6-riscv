@@ -121,8 +121,8 @@ $U/_forktest: $U/forktest.o $(ULIB)
 $U/%.o : $U/%.cpp
 	$(CC) $(CFLAGS) -x c++ -c -o $@ $<
 
-mkfs/mkfs: mkfs/make_fs.cpp $K/fs/fs.h $K/param.h
-	g++ -Werror -Wall -I. -o mkfs/mkfs mkfs/make_fs.cpp
+mkfs/make_fs: mkfs/make_fs.cpp $K/fs/fs.h $K/param.h
+	g++ -Werror -Wall -I. -o mkfs/make_fs mkfs/make_fs.cpp
 
 # Prevent deletion of intermediate files, e.g. cat.o, after first build, so
 # that disk image changes after first build are persistent until clean.  More
@@ -149,8 +149,8 @@ UPROGS=\
 	$U/_zombie\
 	$U/_alloctest\
 
-fs.img: mkfs/mkfs README $(UPROGS)
-	mkfs/mkfs fs.img README $(UPROGS)
+fs.img: mkfs/make_fs README $(UPROGS)
+	mkfs/make_fs fs.img README $(UPROGS)
 
 -include kernel/*.d user/*.d
 
@@ -158,7 +158,7 @@ clean:
 	find . -regextype posix-egrep -regex ".*\.(o|d|asm|sym)" -type f -delete
 	rm -f *.tex *.dvi *.idx *.aux *.log *.ind *.ilg \
 	$U/initcode $U/initcode.out $K/kernel fs.img \
-	mkfs/mkfs .gdbinit \
+	mkfs/make_fs .gdbinit \
         $U/usys.S \
 	$(UPROGS)
 
@@ -173,13 +173,10 @@ CPUS := 5
 endif
 
 QEMUOPTS = -machine virt -bios none -kernel $K/kernel -m 128M -smp $(CPUS)
-#QEMUOPTS += -nographic
+QEMUOPTS += -nographic
 QEMUOPTS += -global virtio-mmio.force-legacy=false
 QEMUOPTS += -drive file=fs.img,if=none,format=raw,id=x0
 QEMUOPTS += -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
-
-qemu: $K/kernel fs.img
-	$(QEMU) $(QEMUOPTS)
 
 SEARCH_LINE=target remote 127.0.0.1:1234
 
@@ -213,6 +210,6 @@ qemu-gdb: $K/kernel .gdbinit clion-debug fs.img
 	@echo "*** Now run 'gdb' in another window." 1>&2
 	$(QEMU) $(QEMUOPTS) -S $(QEMUGDB)
 
-all: qemu
+all: $K/kernel fs.img
 
 .PHONY: clean
