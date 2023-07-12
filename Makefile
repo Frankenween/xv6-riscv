@@ -168,15 +168,6 @@ GDBPORT = $(shell expr `id -u` % 5000 + 25000)
 QEMUGDB = $(shell if $(QEMU) -help | grep -q '^-gdb'; \
 	then echo "-gdb tcp::$(GDBPORT)"; \
 	else echo "-s -p $(GDBPORT)"; fi)
-ifndef CPUS
-CPUS := 5
-endif
-
-QEMUOPTS = -machine virt -bios none -kernel $K/kernel -m 128M -smp $(CPUS)
-QEMUOPTS += -nographic
-QEMUOPTS += -global virtio-mmio.force-legacy=false
-QEMUOPTS += -drive file=fs.img,if=none,format=raw,id=x0
-QEMUOPTS += -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
 
 SEARCH_LINE=target remote 127.0.0.1:1234
 
@@ -207,8 +198,6 @@ clion-debug: .gdbinit
 	@echo $(CONFIG_XML) >$(MKFILE_DIR)/.idea/runConfigurations/remoteKernelDebug.xml
 
 qemu-gdb: $K/kernel .gdbinit clion-debug fs.img
-	@echo "*** Now run 'gdb' in another window." 1>&2
-	$(QEMU) $(QEMUOPTS) -S $(QEMUGDB)
 
 all: $K/kernel fs.img
 

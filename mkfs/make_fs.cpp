@@ -7,7 +7,6 @@ using std::cout;
 using std::endl;
 
 constexpr int INODE_NUMBER = 200;
-constexpr int BITMAP_BLOCKS = (FSSIZE + BSIZE * 8 - 1) / (BSIZE * 8);
 constexpr int LOG_BLOCKS = LOGSIZE;
 constexpr int INODES_PER_BLOCK = BSIZE / sizeof(dinode);
 
@@ -43,8 +42,8 @@ struct fs_builder {
              uint inodes,
              uint log_blocks):
                  image_file(output_name,
-                               std::ios::in | std::ios::out |
-                                     std::ios::trunc | std::ios::binary),
+                            std::ios::in | std::ios::out |
+                            std::ios::trunc | std::ios::binary),
                  blocks(data_blocks),
                  inodes(inodes),
                  log_blocks(log_blocks) {
@@ -80,10 +79,12 @@ struct fs_builder {
       file.read(buffer.data(), BSIZE);
       append_to_inode(inode, buffer.data(), file.gcount());
     }
+    if (!file.eof()) {
+      throw std::runtime_error("IO error while reading from file into " + name);
+    }
   }
 
   void complete_fs() {
-    //dinode root = read_struct<dinode>(inode_byte_position(root_inode));
     mark_blocks_allocated(free_block);
     image_file.close();
   }
@@ -125,7 +126,7 @@ private:
     image_file.seekg(position);
     image_file.read(reinterpret_cast<char*>(&data), sizeof(T));
     if (!image_file.good()) {
-      throw std::runtime_error(string("Failed writing struct ") +
+      throw std::runtime_error(string("Failed reading struct ") +
                                typeid(T).name() +
                                " at position " +
                                std::to_string(position));
@@ -279,7 +280,7 @@ private:
         if (riskv_int(cnt_entry) == 0) {
           cnt_entry = riskv_int(free_block++);
         }
-        data_block = cnt_entry;
+        data_block = riskv_int(cnt_entry);
       }
       uint current_write = std::min(n, (last_block + 1) * BSIZE - offset);
 

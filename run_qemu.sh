@@ -1,16 +1,18 @@
 #!/bin/bash
 
-make all
 
 QEMU=qemu-system-riscv64
 K=kernel
 
-if echo "$@" | grep -q "debug"; then
-  make qemu-gdb
-  exit 0
-fi
+
 if test -z "$CPUS"; then
   CPUS=3
+fi
+
+if $QEMU -help | grep -q '^-gdb'; then
+  QEMUGDB=("-gdb" "tcp::26000")
+else
+  QEMUGDB=("-s" "-p" 26000)
 fi
 
 QEMUOPTS=("-machine" "virt" "-bios" "none" "-kernel" "$K/kernel" "-m" "128M" "-smp" "$CPUS")
@@ -22,4 +24,12 @@ if ! echo "$@" | grep -q "graphic"; then
   QEMUOPTS+=("-nographic")
 fi
 
-$QEMU "${QEMUOPTS[@]}"
+if echo "$@" | grep -q "debug"; then
+  make qemu-gdb
+  echo "*** Now run 'gdb' in another window."
+  $QEMU "${QEMUOPTS[@]}" -S "${QEMUGDB[@]}"
+else
+  make all
+  $QEMU "${QEMUOPTS[@]}"
+fi
+
