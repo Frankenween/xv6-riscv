@@ -1,5 +1,5 @@
-#include "kernel/fs/stat.h"
-#include "user/user.h"
+#include "../kernel/fs/stat.h"
+#include "user.h"
 
 // Memory allocator by Kernighan and Ritchie,
 // The C programming Language, 2nd ed.  Section 8.7.

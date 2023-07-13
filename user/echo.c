@@ -1,5 +1,5 @@
-#include "kernel/fs/stat.h"
-#include "user/user.h"
+#include "../kernel/fs/stat.h"
+#include "user.h"
 
 int main(int argc, char *argv[]) {
   int i;

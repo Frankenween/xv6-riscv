@@ -7,9 +7,9 @@
 //    for (i = 0; i < 40000; i++)
 //      asm volatile("");
 
-#include "kernel/fs/fcntl.h"
-#include "kernel/fs/fs.h"
-#include "user/user.h"
+#include "../kernel/fs/fcntl.h"
+#include "../kernel/fs/fs.h"
+#include "user.h"
 
 int main(int argc, char *argv[]) {
   int fd, i;

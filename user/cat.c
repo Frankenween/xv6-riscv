@@ -1,4 +1,4 @@
-#include "user/user.h"
+#include "user.h"
 
 char buf[512];
 

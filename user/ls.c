@@ -1,5 +1,5 @@
-#include "kernel/fs/fs.h"
-#include "user/user.h"
+#include "../kernel/fs/fs.h"
+#include "user.h"
 
 char *fmtname(char *path) {
   static char buf[DIRSIZ + 1];

@@ -1,8 +1,7 @@
-#include "kernel/fs/fcntl.h"
-#include "kernel/mem/memlayout.h"
-#include "kernel/param.h"
-#include "kernel/riscv.h"
-#include "user/user.h"
+#include "../kernel/fs/fcntl.h"
+#include "../kernel/mem/memlayout.h"
+#include "../kernel/param.h"
+#include "user.h"
 
 void test_many_files() {
   enum { NCHILD = 50, NFD = 10 };

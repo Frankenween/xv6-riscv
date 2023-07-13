@@ -1,6 +1,6 @@
-#include "kernel/fs/fcntl.h"
-#include "kernel/fs/stat.h"
-#include "user/user.h"
+#include "../kernel/fs/fcntl.h"
+#include "../kernel/fs/stat.h"
+#include "user.h"
 
 //
 // wrapper so that it's OK if main() does not call exit().

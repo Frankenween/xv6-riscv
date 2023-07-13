@@ -1,9 +1,9 @@
-#include "kernel/fs/fcntl.h"
-#include "kernel/fs/fs.h"
-#include "kernel/mem/memlayout.h"
-#include "kernel/param.h"
-#include "kernel/riscv.h"
-#include "user/user.h"
+#include "../kernel/fs/fcntl.h"
+#include "../kernel/fs/fs.h"
+#include "../kernel/mem/memlayout.h"
+#include "../kernel/param.h"
+#include "../kernel/riscv.h"
+#include "user.h"
 
 //
 // Tests xv6 system calls.  usertests without arguments runs them all

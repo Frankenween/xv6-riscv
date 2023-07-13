@@ -62,7 +62,7 @@ endif
 QEMU = qemu-system-riscv64
 
 CC = $(TOOLPREFIX)gcc
-CPP = $(TOOLPREFIX)g++
+CXX = $(TOOLPREFIX)g++
 AS = $(TOOLPREFIX)as
 LD = $(TOOLPREFIX)ld
 OBJCOPY = $(TOOLPREFIX)objcopy
@@ -121,6 +121,9 @@ $U/_forktest: $U/forktest.o $(ULIB)
 $U/%.o : $U/%.cpp
 	$(CC) $(CFLAGS) -x c++ -c -o $@ $<
 
+$U/%.o : $U/%.c
+	$(CC) $(CFLAGS) -c -o $@ $<
+
 mkfs/make_fs: mkfs/make_fs.cpp $K/fs/fs.h $K/param.h
 	g++ -Werror -Wall -I. -o mkfs/make_fs mkfs/make_fs.cpp
 
@@ -148,6 +151,8 @@ UPROGS=\
 	$U/_wc\
 	$U/_zombie\
 	$U/_alloctest\
+
+all_user: $(UPROGS)
 
 fs.img: mkfs/make_fs README $(UPROGS)
 	mkfs/make_fs fs.img README $(UPROGS)
