@@ -1,7 +1,7 @@
 #include "vector.h"
 
-#include "kernel/mem/kalloc.h"
-#include "kernel/printf.h"
+#include "../mem/kalloc.h"
+#include "../printf.h"
 #include "string.h"
 
 void v_init(struct vector *v) {

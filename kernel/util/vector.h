@@ -1,6 +1,6 @@
 #pragma once
 
-#include "kernel/types.h"
+#include "../types.h"
 
 // vector keeps uint64 or pointers
 // it can have an array of spinlocks if needed

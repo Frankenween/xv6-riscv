@@ -1,9 +1,9 @@
 #include "log.h"
 
-#include "kernel/param.h"
-#include "kernel/printf.h"
-#include "kernel/proc/proc.h"
-#include "kernel/util/string.h"
+#include "../param.h"
+#include "../printf.h"
+#include "../proc/proc.h"
+#include "../util/string.h"
 
 // Simple logging that allows concurrent FS system calls.
 //

@@ -2,8 +2,8 @@
 
 #include "spinlock.h"
 
-#include "kernel/printf.h"
-#include "kernel/proc/proc.h"
+#include "../printf.h"
+#include "../proc/proc.h"
 
 void initlock(struct spinlock *lk, char *name) {
   lk->name = name;

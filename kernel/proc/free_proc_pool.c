@@ -1,7 +1,7 @@
 #include "free_proc_pool.h"
 
-#include "kernel/mem/kalloc.h"
-#include "kernel/printf.h"
+#include "../mem/kalloc.h"
+#include "../printf.h"
 
 struct {
   // There can't be more than NCPU processes being watched

@@ -1,9 +1,9 @@
 #include "pool_alloc.h"
 
-#include "kernel/printf.h"
-#include "kernel/riscv.h"
-#include "kernel/util/spinlock.h"
-#include "kernel/util/string.h"
+#include "../printf.h"
+#include "../riscv.h"
+#include "../util/spinlock.h"
+#include "../util/string.h"
 #include "memlayout.h"
 
 void freerange(void *pa_start, void *pa_end);

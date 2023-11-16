@@ -11,9 +11,9 @@
 
 #include "console.h"
 
-#include "kernel/dev/uart.h"
-#include "kernel/fs/file.h"
-#include "kernel/proc/proc.h"
+#include "dev/uart.h"
+#include "fs/file.h"
+#include "proc/proc.h"
 #include "types.h"
 
 #define BACKSPACE 0x100

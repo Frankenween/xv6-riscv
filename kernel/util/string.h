@@ -1,6 +1,6 @@
 #pragma once
 
-#include "kernel/types.h"
+#include "../types.h"
 
 #define NELEM(x) (sizeof(x) / sizeof((x)[0]))
 

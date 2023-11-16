@@ -1,6 +1,6 @@
 #pragma once
 
-#include "kernel/fs/bio.h"
+#include "../fs/bio.h"
 
 void initlog(int, struct superblock*);
 void log_write(struct bio*);

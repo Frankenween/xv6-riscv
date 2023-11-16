@@ -1,8 +1,8 @@
 #include "syscall.h"
 
-#include "kernel/mem/vm.h"
-#include "kernel/proc/proc.h"
-#include "kernel/util/string.h"
+#include "mem/vm.h"
+#include "proc/proc.h"
+#include "util/string.h"
 #include "printf.h"
 #include "syscall_numbers.h"
 #include "types.h"

@@ -6,16 +6,16 @@
 // virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
 //
 
-#include "kernel/fs/bio.h"
-#include "kernel/fs/fs.h"
-#include "kernel/mem/kalloc.h"
-#include "kernel/mem/memlayout.h"
-#include "kernel/printf.h"
-#include "kernel/proc/proc.h"
-#include "kernel/riscv.h"
-#include "kernel/types.h"
-#include "kernel/util/spinlock.h"
-#include "kernel/util/string.h"
+#include "../fs/bio.h"
+#include "../fs/fs.h"
+#include "../mem/kalloc.h"
+#include "../mem/memlayout.h"
+#include "../printf.h"
+#include "../proc/proc.h"
+#include "../riscv.h"
+#include "../types.h"
+#include "../util/spinlock.h"
+#include "../util/string.h"
 #include "virtio.h"
 
 // the address of virtio mmio register r.

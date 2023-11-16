@@ -1,12 +1,12 @@
 #include "exec.h"
 
 #include "elf.h"
-#include "kernel/fs/log.h"
-#include "kernel/mem/vm.h"
-#include "kernel/param.h"
-#include "kernel/printf.h"
-#include "kernel/proc/proc.h"
-#include "kernel/util/string.h"
+#include "../fs/log.h"
+#include "../mem/vm.h"
+#include "../param.h"
+#include "../printf.h"
+#include "../proc/proc.h"
+#include "../util/string.h"
 
 static int loadseg(pde_t *, uint64, struct inode *, uint, uint);
 

@@ -12,11 +12,11 @@
 #include "fs.h"
 
 #include "file.h"
-#include "kernel/fs/bio.h"
-#include "kernel/param.h"
-#include "kernel/printf.h"
-#include "kernel/proc/proc.h"
-#include "kernel/util/string.h"
+#include "../fs/bio.h"
+#include "../param.h"
+#include "../printf.h"
+#include "../proc/proc.h"
+#include "../util/string.h"
 #include "log.h"
 #include "stat.h"
 

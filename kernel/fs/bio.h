@@ -1,8 +1,8 @@
 #pragma once
 
 #include "fs.h"
-#include "kernel/types.h"
-#include "kernel/util/sleeplock.h"
+#include "../types.h"
+#include "../util/sleeplock.h"
 
 struct bio {
   int valid;  // has data been read from disk?

@@ -1,8 +1,8 @@
 #include "kstack_provider.h"
 
-#include "kernel/mem/memlayout.h"
-#include "kernel/util/spinlock.h"
-#include "kernel/util/vector.h"
+#include "../mem/memlayout.h"
+#include "../util/spinlock.h"
+#include "../util/vector.h"
 
 struct vector pool;
 struct spinlock lock;

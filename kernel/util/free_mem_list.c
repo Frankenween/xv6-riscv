@@ -1,6 +1,6 @@
 #include "free_mem_list.h"
 
-#include "kernel/printf.h"
+#include "../printf.h"
 
 void fm_list_init(struct free_mem_list *lst) {
   lst->next = lst;

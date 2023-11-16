@@ -15,9 +15,9 @@
 
 #include "bio.h"
 
-#include "kernel/dev/virtio.h"
-#include "kernel/param.h"
-#include "kernel/printf.h"
+#include "../dev/virtio.h"
+#include "../param.h"
+#include "../printf.h"
 
 struct {
   struct spinlock lock;

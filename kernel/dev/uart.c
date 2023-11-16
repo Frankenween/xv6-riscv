@@ -4,11 +4,11 @@
 
 #include "uart.h"
 
-#include "kernel/console.h"
-#include "kernel/mem/memlayout.h"
-#include "kernel/proc/proc.h"
-#include "kernel/types.h"
-#include "kernel/util/spinlock.h"
+#include "../console.h"
+#include "../mem/memlayout.h"
+#include "../proc/proc.h"
+#include "../types.h"
+#include "../util/spinlock.h"
 
 // the UART control registers are memory-mapped
 // at address UART0. this macro returns the
@@ -100,7 +100,7 @@ void uartputc(int c) {
 }
 
 // alternate version of uartputc() that doesn't
-// use interrupts, for use by kernel printf() and
+// use interrupts, for use by .. printf() and
 // to echo characters. it spins waiting for the uart's
 // output register to be empty.
 void uartputc_sync(int c) {
