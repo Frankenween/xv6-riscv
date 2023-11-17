@@ -167,43 +167,6 @@ clean:
         $U/usys.S \
 	$(UPROGS)
 
-# try to generate a unique GDB port
-GDBPORT = $(shell expr `id -u` % 5000 + 25000)
-# QEMU's gdb stub command line changed in 0.11
-QEMUGDB = $(shell if $(QEMU) -help | grep -q '^-gdb'; \
-	then echo "-gdb tcp::$(GDBPORT)"; \
-	else echo "-s -p $(GDBPORT)"; fi)
-
-SEARCH_LINE=target remote 127.0.0.1:1234
-
-GDB_CONFIG_FILE_DIR=~/.config/gdb
-GDB_CONFIG_FILE=$(GDB_CONFIG_FILE_DIR)/gdbinit
-
-.gdbinit: .gdbinit.tmpl-riscv
-#    Generate .gdbinit
-	@sed "s/$(SEARCH_LINE)/$(INSERTED_LINE)$(GDBPORT)/" < $^ > $@
-#    Make gdb autoload config files
-	@mkdir -p $(GDB_CONFIG_FILE_DIR)
-	@echo add-auto-load-safe-path $(MKFILE_DIR)/$@ >> $(GDB_CONFIG_FILE)
-
-SYMBOL_FILE = "$$"PROJECT_DIR"$$"/kernel/kernel
-
-TOOLCHAIN_NAME=xv6-toolchain
-CONFIG_XML=\<component name=\"ProjectRunConfigurationManager\"\>\\n \
-  \<configuration default=\"false\" name=\"kernel\" type=\"CLion_Remote\" \
-      version=\"1\" remoteCommand=\"tcp::$(GDBPORT)\"\ symbolFile=\"$(SYMBOL_FILE)\" \>\\n \
-    \<debugger toolchainName=\"$(TOOLCHAIN_NAME)\" /\>\\n \
-    \<method v=\"2\" /\>\\n \
-  \</configuration\>\\n \
-\</component\>
-
-clion-debug: .gdbinit
-#    Generate run configuration for remote debugging
-	@mkdir -p $(MKFILE_DIR)/.idea/runConfigurations/
-	@echo $(CONFIG_XML) >$(MKFILE_DIR)/.idea/runConfigurations/remoteKernelDebug.xml
-
-qemu-gdb: $K/kernel .gdbinit clion-debug fs.img
-
 all: $K/kernel fs.img
 
 .PHONY: clean
