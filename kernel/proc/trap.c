@@ -1,12 +1,12 @@
 #include "trap.h"
 
-#include "kernel/dev/plic.h"
-#include "kernel/dev/uart.h"
-#include "kernel/dev/virtio.h"
-#include "kernel/mem/memlayout.h"
-#include "kernel/printf.h"
-#include "kernel/proc/proc.h"
-#include "kernel/syscall.h"
+#include "../dev/plic.h"
+#include "../dev/uart.h"
+#include "../dev/virtio.h"
+#include "../mem/memlayout.h"
+#include "../printf.h"
+#include "../proc/proc.h"
+#include "../syscall.h"
 
 struct spinlock tickslock;
 uint ticks;

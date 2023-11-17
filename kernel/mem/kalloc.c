@@ -5,8 +5,8 @@
 #include "kalloc.h"
 
 #include "buddy_alloc.h"
-#include "kernel/mem/memlayout.h"
-#include "kernel/riscv.h"
+#include "../mem/memlayout.h"
+#include "../riscv.h"
 
 extern char end[];  // first address after kernel
 

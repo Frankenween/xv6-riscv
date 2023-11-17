@@ -1,7 +1,7 @@
 #pragma once
 
-#include "kernel/fs/bio.h"
-#include "kernel/types.h"
+#include "../fs/bio.h"
+#include "../types.h"
 
 //
 // virtio device definitions.

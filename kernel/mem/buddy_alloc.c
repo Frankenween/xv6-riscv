@@ -3,11 +3,11 @@
 
 #include "buddy_alloc.h"
 
-#include "kernel/printf.h"
-#include "kernel/util/bitset.h"
-#include "kernel/util/free_mem_list.h"
-#include "kernel/util/spinlock.h"
-#include "kernel/util/string.h"
+#include "../printf.h"
+#include "../util/bitset.h"
+#include "../util/free_mem_list.h"
+#include "../util/spinlock.h"
+#include "../util/string.h"
 
 static int nsizes;  // the number of entries in bd_sizes array
 

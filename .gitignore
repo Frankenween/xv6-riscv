@@ -14,3 +14,5 @@ kernelmemfs
 kernel/kernel
 user/usys.S
 .gdbinit
+mkfs/make_fs
+.idea

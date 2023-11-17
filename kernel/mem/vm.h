@@ -1,7 +1,7 @@
 #pragma once
 
-#include "kernel/riscv.h"
-#include "kernel/types.h"
+#include "../riscv.h"
+#include "../types.h"
 
 void kvminit(void);
 void kvminithart(void);

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "kernel/types.h"
+#include "../types.h"
 
 void init_buddy(void* base, void* end);
 void free_buddy(void* p);

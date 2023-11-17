@@ -1,6 +1,6 @@
 #pragma once
 
-#include "kernel/types.h"
+#include "../types.h"
 
 void init_kstack_provider();
 uint64 get_kstack_va();

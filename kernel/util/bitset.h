@@ -1,6 +1,6 @@
 #pragma once
 
-#include "kernel/types.h"
+#include "../types.h"
 
 // Returns 1 if i-th bit in bitset is active
 int bit_isset(const char *bitset, uint64 i);

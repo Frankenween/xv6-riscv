@@ -1,10 +1,10 @@
 #include "console.h"
-#include "kernel/dev/plic.h"
-#include "kernel/dev/virtio.h"
-#include "kernel/mem/kalloc.h"
-#include "kernel/mem/vm.h"
-#include "kernel/proc/proc.h"
-#include "kernel/proc/trap.h"
+#include "dev/plic.h"
+#include "dev/virtio.h"
+#include "mem/kalloc.h"
+#include "mem/vm.h"
+#include "proc/proc.h"
+#include "proc/trap.h"
 #include "printf.h"
 
 volatile static int started = 0;

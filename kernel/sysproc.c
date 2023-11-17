@@ -1,6 +1,6 @@
-#include "kernel/proc/proc.h"
-#include "kernel/proc/trap.h"
-#include "kernel/util/spinlock.h"
+#include "proc/proc.h"
+#include "proc/trap.h"
+#include "util/spinlock.h"
 #include "syscall.h"
 #include "types.h"
 

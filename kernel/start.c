@@ -1,4 +1,4 @@
-#include "kernel/mem/memlayout.h"
+#include "mem/memlayout.h"
 #include "param.h"
 #include "riscv.h"
 #include "types.h"

@@ -1,8 +1,8 @@
 #include "pipe.h"
 
-#include "kernel/mem/kalloc.h"
-#include "kernel/mem/vm.h"
-#include "kernel/proc/proc.h"
+#include "mem/kalloc.h"
+#include "mem/vm.h"
+#include "proc/proc.h"
 #include "types.h"
 
 int pipealloc(struct file **f0, struct file **f1) {

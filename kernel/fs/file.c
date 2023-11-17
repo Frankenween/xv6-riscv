@@ -4,14 +4,14 @@
 
 #include "file.h"
 
-#include "kernel/fs/fs.h"
-#include "kernel/mem/kalloc.h"
-#include "kernel/mem/vm.h"
-#include "kernel/param.h"
-#include "kernel/pipe.h"
-#include "kernel/printf.h"
-#include "kernel/proc/proc.h"
-#include "kernel/util/string.h"
+#include "../fs/fs.h"
+#include "../mem/kalloc.h"
+#include "../mem/vm.h"
+#include "../param.h"
+#include "../pipe.h"
+#include "../printf.h"
+#include "../proc/proc.h"
+#include "../util/string.h"
 #include "log.h"
 #include "stat.h"
 
