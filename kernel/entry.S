@@ -5,6 +5,10 @@
 .section .text
 .global _entry
 _entry:
+        # QEMU places device tree start at a1 register
+        # https://docs.kernel.org/arch/riscv/boot.html - linux requires this, so I thought it is reasonable
+        la a0, device_tree_ptr
+        sd a1, 0(a0)
         # set up a stack for C.
         # stack0 is declared in start.c,
         # with a 4096-byte stack per CPU.

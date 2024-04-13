@@ -39,7 +39,8 @@ OBJS = \
   $K/util/vector.o \
   $K/proc/free_proc_pool.o \
   $K/proc/kstack_provider.o \
-  $K/util/rw_lock.o
+  $K/util/rw_lock.o \
+  $K/dev/device_tree.o
 
 # riscv64-unknown-elf- or riscv64-linux-gnu-
 # perhaps in /opt/riscv/bin

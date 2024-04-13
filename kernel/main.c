@@ -6,6 +6,7 @@
 #include "proc/proc.h"
 #include "proc/trap.h"
 #include "printf.h"
+#include "dev/device_tree.h"
 
 volatile static int started = 0;
 
@@ -17,6 +18,7 @@ void main() {
     printf("\n");
     printf("xv6 kernel is booting\n");
     printf("\n");
+    device_tree_get_header(); // try to get header
     kinit();             // physical page allocator
     kvminit();           // create kernel page table
     kvminithart();       // turn on paging
