@@ -36,4 +36,20 @@ uint32 change_endian32(uint32 x);
 
 uint64 change_endian64(uint64 x);
 
-struct ftd_header device_tree_get_header();
+// Read Flattened Device Tree header.
+// If successfully, 0 is returned.
+// If magic number is invalid, 1 is returned.
+// If device tree version is incorrect, 2 is returned
+int dt_get_header(struct ftd_header *header);
+
+const void* dt_get_address();
+
+struct ftd_reserve_entry {
+  uint64 address;
+  uint64 size;
+};
+
+// Get i-th memory reservation entry.
+// If it is a <0, 0> pair, 0 is returned, 1 otherwise.
+// So it is not a random-access array, entries should be accessed sequentially.
+int dt_get_reserve_entry(struct ftd_header header, struct ftd_reserve_entry *entry, uint64 i);

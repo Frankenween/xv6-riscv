@@ -30,7 +30,7 @@ struct level_info {
 static struct level_info *lvl_sizes;
 static void *allocator_base;
 static struct spinlock lock;
-static uint64 free_mem;
+static volatile uint64 free_mem;
 
 int first_level_contains(uint64 n) {
   int lvl = 0;

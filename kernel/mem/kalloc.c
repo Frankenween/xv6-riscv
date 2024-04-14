@@ -4,15 +4,36 @@
 
 #include "kalloc.h"
 
-#include "buddy_alloc.h"
+#include "../dev/device_tree.h"
 #include "../mem/memlayout.h"
-#include "../riscv.h"
+#include "buddy_alloc.h"
+#include "kernel/printf.h"
+
+#define max(a, b) (((a) < (b)) ? (b) : (a))
 
 extern char end[];  // first address after kernel
 
 void kinit() {
-  char *base = (char *)PGROUNDUP((uint64)end);
-  init_buddy(base, (void *)PHYSTOP);
+  uint64 base = (uint64)end;
+
+  struct ftd_header ftdHeader;
+  if (dt_get_header(&ftdHeader)) {
+    printf("No valid device tree structure found: all memory from address %p "
+        "will be used\n", base);
+  } else {
+    printf("Device tree reservations:\n");
+    struct ftd_reserve_entry entry;
+    for (uint64 i = 0; dt_get_reserve_entry(ftdHeader, &entry, i); i++) {
+      printf("  Reserved region [%p; %p)\n",
+             entry.address, entry.address + entry.size);
+      base = max(base, entry.address + entry.size);
+    }
+    base = max(base, (uint64)dt_get_address() + ftdHeader.total_size);
+  }
+
+  base = PGROUNDUP(base);
+  printf("Using memory from %p\n", base);
+  init_buddy((char*)base, (void *)PHYSTOP);
 }
 
 // Free the page of physical memory pointed at by pa,
